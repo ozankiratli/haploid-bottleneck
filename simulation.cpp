@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <iterator>
 #include <ctime>
+//#include <chrono>
 
 using namespace std;
 
@@ -84,8 +85,9 @@ int main() {
 
 	double mu_scaled=1;
 
-	random_device rd;
-	mt19937 gen(rd());
+	//random_device rd;
+
+	minstd_rand0 gen (clock());
 	normal_distribution<double> dist1(mu_neu,0.1*mu_neu);
 	normal_distribution<double> dist2(mu_del,0.1*mu_del);
 	normal_distribution<double> dist3(mu_ben,0.1*mu_ben);
@@ -96,6 +98,34 @@ int main() {
 	poisson_distribution<int> dist8(inc_mut_rate);
 	uniform_int_distribution<int> dist9(0,nmutator-1);
 	uniform_int_distribution<long int> dist14(0,l-1);
+	uniform_int_distribution<int> dist17(0,1000);
+
+	array<array<bool,1000>,1000> success;
+	for (int i00=0;i00<500;++i00){
+		for (int i01=0;i01<1000;++i01){
+			success[i00][i01]=0;
+		}
+	}
+	for (int i00=500;i00<1000;++i00){
+		for (int i01=0;i01<1000;++i01){
+			success[i00][i01]=1;
+		}
+	}
+
+	for (int i00=0;i00<500;++i00){
+		for (int i01=0;i01<=i00;++i01){
+			int place=dist17(gen);
+			while (success[i00][place]==1) place=dist17(gen);
+			success[i00][place]=1;
+		}
+	}
+	for (int i00=500;i00<1000;++i00){
+		for (int i01=0;i01<=1000-i00;++i01){
+			int place=dist17(gen);
+			while (success[i00][place]==0) place=dist17(gen);
+			success[i00][place]=0;
+		}
+	}
 
 	array<array<double,t_growth>,t_bot> muNeu;
 	array<array<double,t_growth>,t_bot> muDel;
@@ -235,30 +265,59 @@ int main() {
 
 			uniform_int_distribution<long int> dist13(0,n-1);
 			{
-			vector<mutlist> neu(nNeu);
-			for (long int i00=0;i00<nNeu;++i00){
-				neu[i00].mutInd=dist13(gen);
-				neu[i00].mut=dist14(gen);
-				binomial_distribution<long int> dist15(1,pop[neu[i00].mutInd].rel_mu);
-				neu[i00].success=dist15(gen);
-			}
-			for (long int i00=0;i00<nNeu;++i00){
-				if (neu[i00].success){
-					pop[neu[i00].mutInd].neuLocus.push_back(neu[i00].mut);
+				{
+				mutlist neu[100000];
+				while (nNeu>100000){
+					int rmu;
+					for (long int i00=0;i00<100000;++i00){
+						neu[i00].mutInd=dist13(gen);
+						neu[i00].mut=dist6(gen);
+						//binomial_distribution<long int> dist15(1,pop[del[i00].mutInd].rel_mu);
+						//del[i00].success=dist15(gen);
+						rmu=1000*pop[neu[i00].mutInd].rel_mu;
+						rmu=max(0,min(1000,rmu));
+						neu[i00].success=success[rmu][dist17(gen)];
+					}
+					for (long int i00=0;i00<100000;++i00){
+						if (neu[i00].success){
+							pop[neu[i00].mutInd].neuLocus.push_back(neu[i00].mut);
+						}
+					}
+					nNeu-=100000;
 				}
-			}
+				}
+				mutlist neu[nNeu];
+				int rmu;
+				for (long int i00=0;i00<nNeu;++i00){
+					neu[i00].mutInd=dist13(gen);
+					neu[i00].mut=dist14(gen);
+					//binomial_distribution<long int> dist15(1,pop[neu[i00].mutInd].rel_mu);
+					rmu=1000*pop[neu[i00].mutInd].rel_mu;
+					rmu=max(0,min(1000,rmu));
+					neu[i00].success=success[rmu][dist17(gen)];
+				}
+				for (long int i00=0;i00<nNeu;++i00){
+					if (neu[i00].success){
+						pop[neu[i00].mutInd].neuLocus.push_back(neu[i00].mut);
+					}
+				}
 			}
 
 			{
+				{
+				mutlist del[100000];
 				while (nDel>100000){
-					mutlist del[100000];
-					for (long int i00=0;i00<nDel;++i00){
+					int rmu;
+					for (long int i00=0;i00<100000;++i00){
 						del[i00].mutInd=dist13(gen);
 						del[i00].mut=dist6(gen);
-						binomial_distribution<long int> dist15(1,pop[del[i00].mutInd].rel_mu);
-						del[i00].success=dist15(gen);
+						//binomial_distribution<long int> dist15(1,pop[del[i00].mutInd].rel_mu);
+						//del[i00].success=dist15(gen);
+						rmu=1000*pop[del[i00].mutInd].rel_mu;
+						rmu=max(0,min(1000,rmu));
+						del[i00].success=success[rmu][dist17(gen)];
 					}
-					for (long int i00=0;i00<nDel;++i00){
+					for (long int i00=0;i00<100000;++i00){
 						if (del[i00].success && !(find(delLoci.begin(),delLoci.end(),del[i00].mut)!=delLoci.end())){
 							pop[del[i00].mutInd].delLocus.push_back(del[i00].mut);
 							pop[del[i00].mutInd].w-=s_del[del[i00].mut];
@@ -271,12 +330,17 @@ int main() {
 					}
 					nDel-=100000;
 				}
+				}
 				mutlist del[nDel];
+				int rmu;
 				for (long int i00=0;i00<nDel;++i00){
 					del[i00].mutInd=dist13(gen);
 					del[i00].mut=dist6(gen);
-					binomial_distribution<long int> dist15(1,pop[del[i00].mutInd].rel_mu);
-					del[i00].success=dist15(gen);
+					//binomial_distribution<long int> dist15(1,pop[del[i00].mutInd].rel_mu);
+					//del[i00].success=dist15(gen);
+					rmu=1000*pop[del[i00].mutInd].rel_mu;
+					rmu=max(0,min(1000,rmu));
+					del[i00].success=success[rmu][dist17(gen)];
 				}
 				for (long int i00=0;i00<nDel;++i00){
 					if (del[i00].success && !(find(delLoci.begin(),delLoci.end(),del[i00].mut)!=delLoci.end())){
@@ -293,11 +357,15 @@ int main() {
 
 			{
 			mutlist ben[nBen];
+			int rmu;
 			for (long int i00=0;i00<nBen;++i00){
 				ben[i00].mutInd=dist13(gen);
 				ben[i00].mut=dist6(gen);
-				binomial_distribution<long int> dist15(1,pop[ben[i00].mutInd].rel_mu);
-				ben[i00].success=dist15(gen);
+				//binomial_distribution<long int> dist15(1,pop[ben[i00].mutInd].rel_mu);
+				//ben[i00].success=dist15(gen);
+				rmu=1000*pop[ben[i00].mutInd].rel_mu;
+				rmu=max(0,min(1000,rmu));
+				ben[i00].success=success[rmu][dist17(gen)];
 			}
 			for (long int i00=0;i00<nBen;++i00){
 				if (ben[i00].success && !(find(benLoci.begin(),benLoci.end(),ben[i00].mut)!=benLoci.end())){
