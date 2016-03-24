@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <iterator>
 #include <ctime>
-//#include <chrono>
+
 
 using namespace std;
 
@@ -28,7 +28,7 @@ struct individual
 	vector<long int> benLocus;
 	double rel_mu;
 	double w;
-	//int nOff;
+	int nOff;
 };
 
 struct wlist
@@ -46,8 +46,6 @@ struct mutlist
 
 bool acompare(wlist lhs, wlist rhs) { return lhs.w > rhs.w; }
 
-
-
 int main() {
 	clock_t begin=clock();
 	const int t_bot = 50;
@@ -63,15 +61,13 @@ int main() {
 	const int nmutator=20;
 	double inc_mut_rate=0.1;
 	double mean_e_mutator=0.9;
-	double selecthighest=0.2;
+	double selecthighest=0.9;
 
 	bool mutator_control=true;
 	bool increased_mutator=true;
 	bool del_dep= true;
 
 	//int run=0;
-
-
 
 	long int initialN=1;
 	//int tbot=1;
@@ -85,9 +81,10 @@ int main() {
 
 	double mu_scaled=1;
 
-	//random_device rd;
 
-	minstd_rand0 gen (clock());
+	random_device rd;
+	//mt19937 gen (rd());
+	minstd_rand0 gen (rd());
 	normal_distribution<double> dist1(mu_neu,0.1*mu_neu);
 	normal_distribution<double> dist2(mu_del,0.1*mu_del);
 	normal_distribution<double> dist3(mu_ben,0.1*mu_ben);
@@ -166,11 +163,8 @@ int main() {
 	vector<int> benLoci;
 
 
-	individual initialind={0,{},{},{},1,1};
+	individual initialind={0,{},{},{},1,1,2};
 
-
-	vector<int> nOff;
-	vector<double> wadj;
 	vector<individual> pop;
 	long int sumOff;
 	long int nhighest;
@@ -190,6 +184,8 @@ int main() {
 		}
 		pop[0].rel_mu=mu_next;
 		pop[0].w=w_next;
+		pop[0].nOff=round(pop[0].w*2.5-0.1);
+		pop[0].nOff=max(0,min(3,pop[0].nOff));
 
 		if (mutator_control && increased_mutator){
 			if (del_dep){
@@ -199,8 +195,8 @@ int main() {
 			for (int i00=0;i00<tmp;++i00){
 				int mut;
 				mut=dist9(gen);
-				if(!(find(delLoci.begin(),delLoci.end(),mut)!=delLoci.end())){
-					pop[0].delLocus.push_back(mut);
+				if(!(find(benLoci.begin(),benLoci.end(),mut)!=benLoci.end())){
+					pop[0].benLocus.push_back(mut);
 					for (int i01=0;i01<nmutator;++i01){
 						if(mut==mutator[i01]){
 							pop[0].rel_mu=pop[0].rel_mu*mut_e[i01];
@@ -210,20 +206,11 @@ int main() {
 			}
 		}
 
-		nOff.clear();
-		wadj.clear();
 
-		wadj.push_back(pop[0].w*2.5-0.1);
-		nOff.push_back(round(wadj[0]));
-
-		if (nOff[0]<0){
-		nOff[0]=0;
+		sumOff=0;
+		for (int i00=0;i00<n;++i00){
+			sumOff=pop[i00].nOff;
 		}
-		if (nOff[0]>2){
-		nOff[0]=2;
-		}
-		sumOff=accumulate(nOff.begin(),nOff.end(),0);
-
 		if (sumOff<=0){
 			clock_t end = clock();
 			double es = double(end - begin);
@@ -238,16 +225,15 @@ int main() {
 		for (int i2=0;i2<t_growth;++i2){
 			clock_t lap = clock();
 			for (long int i00=0;i00<n;++i00){
-				if (nOff[i00]>0){
-					for (int i01=0;i01<nOff[i00]-1;++i01){
+				if (pop[i00].nOff>0){
+					for (int i01=0;i01<pop[i00].nOff-1;++i01){
 						pop.push_back(pop[i00]);
 					}
 				}
-				if (nOff[i00]==0){
+				if (pop[i00].nOff==0){
 					pop.erase(pop.begin()+i00);
 				}
 			}
-
 			n=sumOff;
 
 			for (long int i00=0;i00<n;++i00){
@@ -258,12 +244,13 @@ int main() {
 			poisson_distribution<long int> dist10(n*l*muNeu[i1][i2]);
 			poisson_distribution<long int> dist11(n*l*muDel[i1][i2]);
 			poisson_distribution<long int> dist12(n*l*muBen[i1][i2]);
+			uniform_int_distribution<long int> dist13(0,n-1);
 
 			long int nNeu=dist10(gen);
 			long int nDel=dist11(gen);
 			long int nBen=dist12(gen);
 
-			uniform_int_distribution<long int> dist13(0,n-1);
+
 			{
 				{
 				mutlist neu[100000];
@@ -272,10 +259,13 @@ int main() {
 					for (long int i00=0;i00<100000;++i00){
 						neu[i00].mutInd=dist13(gen);
 						neu[i00].mut=dist6(gen);
-						//binomial_distribution<long int> dist15(1,pop[del[i00].mutInd].rel_mu);
-						//del[i00].success=dist15(gen);
 						rmu=1000*pop[neu[i00].mutInd].rel_mu;
-						rmu=max(0,min(1000,rmu));
+						rmu=max(0,rmu);
+						while (rmu>1000){
+							pop[neu[i00].mutInd].neuLocus.push_back(neu[i00].mut);
+							neu[i00].mut=dist6(gen);
+							rmu-=1000;
+						}
 						neu[i00].success=success[rmu][dist17(gen)];
 					}
 					for (long int i00=0;i00<100000;++i00){
@@ -291,9 +281,13 @@ int main() {
 				for (long int i00=0;i00<nNeu;++i00){
 					neu[i00].mutInd=dist13(gen);
 					neu[i00].mut=dist14(gen);
-					//binomial_distribution<long int> dist15(1,pop[neu[i00].mutInd].rel_mu);
 					rmu=1000*pop[neu[i00].mutInd].rel_mu;
-					rmu=max(0,min(1000,rmu));
+					rmu=max(0,rmu);
+					while (rmu>1000){
+						pop[neu[i00].mutInd].neuLocus.push_back(neu[i00].mut);
+						neu[i00].mut=dist6(gen);
+						rmu-=1000;
+					}
 					neu[i00].success=success[rmu][dist17(gen)];
 				}
 				for (long int i00=0;i00<nNeu;++i00){
@@ -311,19 +305,24 @@ int main() {
 					for (long int i00=0;i00<100000;++i00){
 						del[i00].mutInd=dist13(gen);
 						del[i00].mut=dist6(gen);
-						//binomial_distribution<long int> dist15(1,pop[del[i00].mutInd].rel_mu);
-						//del[i00].success=dist15(gen);
 						rmu=1000*pop[del[i00].mutInd].rel_mu;
-						rmu=max(0,min(1000,rmu));
+						rmu=max(0,rmu);
+						while (rmu>1000){
+							pop[del[i00].mutInd].delLocus.push_back(del[i00].mut);
+							del[i00].mut=dist6(gen);
+							rmu-=1000;
+						}
 						del[i00].success=success[rmu][dist17(gen)];
 					}
 					for (long int i00=0;i00<100000;++i00){
 						if (del[i00].success && !(find(delLoci.begin(),delLoci.end(),del[i00].mut)!=delLoci.end())){
 							pop[del[i00].mutInd].delLocus.push_back(del[i00].mut);
 							pop[del[i00].mutInd].w-=s_del[del[i00].mut];
+							pop[del[i00].mutInd].nOff=round(pop[del[i00].mutInd].w*2.5-0.1);
+							pop[del[i00].mutInd].nOff=max(0,min(3,pop[del[i00].mutInd].nOff));
 							for (int i01=0;i01<nmutator;++i01){
 								if(del[i00].mut==mutator[i01]){
-									(pop[del[i00].mutInd].rel_mu)*=mut_e[i01];
+									(pop[del[i00].mutInd].rel_mu)/=mut_e[i01];
 								}
 							}
 						}
@@ -336,19 +335,24 @@ int main() {
 				for (long int i00=0;i00<nDel;++i00){
 					del[i00].mutInd=dist13(gen);
 					del[i00].mut=dist6(gen);
-					//binomial_distribution<long int> dist15(1,pop[del[i00].mutInd].rel_mu);
-					//del[i00].success=dist15(gen);
 					rmu=1000*pop[del[i00].mutInd].rel_mu;
-					rmu=max(0,min(1000,rmu));
+					rmu=max(0,rmu);
+					while (rmu>1000){
+						pop[del[i00].mutInd].delLocus.push_back(del[i00].mut);
+						del[i00].mut=dist6(gen);
+						rmu-=1000;
+					}
 					del[i00].success=success[rmu][dist17(gen)];
 				}
 				for (long int i00=0;i00<nDel;++i00){
 					if (del[i00].success && !(find(delLoci.begin(),delLoci.end(),del[i00].mut)!=delLoci.end())){
 						pop[del[i00].mutInd].delLocus.push_back(del[i00].mut);
 						pop[del[i00].mutInd].w-=s_del[del[i00].mut];
+						pop[del[i00].mutInd].nOff=round(pop[del[i00].mutInd].w*2.5-0.1);
+						pop[del[i00].mutInd].nOff=max(0,min(3,pop[del[i00].mutInd].nOff));
 						for (int i01=0;i01<nmutator;++i01){
 							if(del[i00].mut==mutator[i01]){
-								(pop[del[i00].mutInd].rel_mu)*=mut_e[i01];
+								(pop[del[i00].mutInd].rel_mu)/=mut_e[i01];
 							}
 						}
 					}
@@ -361,54 +365,42 @@ int main() {
 			for (long int i00=0;i00<nBen;++i00){
 				ben[i00].mutInd=dist13(gen);
 				ben[i00].mut=dist6(gen);
-				//binomial_distribution<long int> dist15(1,pop[ben[i00].mutInd].rel_mu);
-				//ben[i00].success=dist15(gen);
 				rmu=1000*pop[ben[i00].mutInd].rel_mu;
-				rmu=max(0,min(1000,rmu));
+				while (rmu>1000){
+					pop[ben[i00].mutInd].neuLocus.push_back(ben[i00].mut);
+					ben[i00].mut=dist6(gen);
+					rmu-=1000;
+				}
 				ben[i00].success=success[rmu][dist17(gen)];
 			}
 			for (long int i00=0;i00<nBen;++i00){
 				if (ben[i00].success && !(find(benLoci.begin(),benLoci.end(),ben[i00].mut)!=benLoci.end())){
 					pop[ben[i00].mutInd].benLocus.push_back(ben[i00].mut);
 					pop[ben[i00].mutInd].w+=s_ben[ben[i00].mut];
-					/*
+					pop[ben[i00].mutInd].nOff=round(pop[ben[i00].mutInd].w*2.5-0.1);
+					pop[ben[i00].mutInd].nOff=max(0,min(3,pop[ben[i00].mutInd].nOff));
 					for (int i01=0;i01<nmutator;++i01){
 						if(ben[i00].mut==mutator[i01]){
-							pop[ben[i00].mutInd].rel_mu/=mut_e[i01];
+							pop[ben[i00].mutInd].rel_mu*=mut_e[i01];
 						}
-					}*/
+					}
 				}
 			}
 			}
 			}
 
-			wadj.clear();
-			nOff.clear();
 			{
+				sumOff=0;
 				double wtmp=0;
 				for (int i00=0;i00<n;++i00){
-					double tmp0=pop[i00].w*2.5-0.1;
-					wadj.push_back(tmp0);
+					sumOff+=pop[i00].nOff;
 					wtmp+=pop[i00].w;
-					if (wadj[i00]<=0){
-						wadj[i00]=0.000001;
-					}
-					int tmp1=round(wadj[i00]);
-					nOff.push_back(tmp1);
-
-					if (nOff[i00]<0){
-					nOff[i00]=0;
-					}
-					if (nOff[i00]>2){
-					nOff[i00]=2;
-					}
 				}
-
-				sumOff=accumulate(nOff.begin(),nOff.end(),0);
 
 				result_nOff[i1][i2]=sumOff;
 				result_wMean[i1][i2]=wtmp/n;
 			}
+
 			if (sumOff<=0){
 				cout << "Extinction at growth" << endl;
 				cout << "t_bot= " << i1 << endl;
@@ -464,12 +456,15 @@ int main() {
 		for (unsigned long int i00=0;i00<tmpf.neuLocus.size();++i00){
 			neuLoci.push_back(tmpf.neuLocus[i00]);
 		}
+		tmpf.neuLocus=neuLoci;
 		for (unsigned long int i00=0;i00<tmpf.delLocus.size();++i00){
 			delLoci.push_back(tmpf.delLocus[i00]);
 		}
+		tmpf.delLocus=delLoci;
 		for (unsigned long int i00=0;i00<tmpf.benLocus.size();++i00){
 			benLoci.push_back(tmpf.benLocus[i00]);
 		}
+		tmpf.benLocus=benLoci;
 		w_next=tmpf.w;
 		mu_next=tmpf.rel_mu;
 
@@ -487,6 +482,7 @@ int main() {
 
 	return 0;
 }
+
 
 
 
