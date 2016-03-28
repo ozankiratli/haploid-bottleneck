@@ -14,11 +14,13 @@
 #include <vector>
 #include <algorithm>
 #include <iterator>
+#include <string>
+#include <cstdlib>
 #include <ctime>
-
+#include <fstream>
+#include "variables.h"
 
 using namespace std;
-
 
 struct individual
 {
@@ -44,43 +46,307 @@ struct mutlist
 	bool success;
 };
 
+struct resultsum
+{
+	long int nNeut;
+	double rNeut;
+	long int nDele;
+	double rDele;
+	long int nBene;
+	double rBene;
+	long int nMuta;
+	double muScale;
+	double w;
+};
+
+string fileformat=".out";
+
 bool acompare(wlist lhs, wlist rhs) { return lhs.w > rhs.w; }
+
+/*
+const int t_bot=_t_bot;// = 2;
+const int t_growth=_t_growth;// = 10;
+const long int ngenes=_ngenes;// = 4400;
+const long int l=_l;// = 4640000;
+double mu_d=_mu_d;// = 0.9;
+double mu_b=_mu_b;// = 0.001;
+double mu_n=_mu_n;// = 9.9;
+double shaped=_shaped;// = 0.1;
+double scaled=_scaled;// = 0.3;
+double betab=_betab;// = 0.01;
+const int nmutator=_nmutator;//=20;
+double inc_mut_rate=_inc_mut_rate;//=0.1;
+double mean_e_mutator=_mean_e_mutator;//=0.9;
+double selecthighest=_selecthighest;//=0.9;
+
+bool mutator_control=_mutator_control;//=true;
+bool increased_mutator=_increased_mutator;//=true;
+bool del_dep=_del_dep;//= true;
+
+int run=_run;//=0;
+*/
+extern const int t_bot;
+extern const int t_growth;
+
+extern const long int ngenes;
+extern const long int l;
+extern const int nmutator;
+
+extern double mu_d;
+extern double mu_b;
+extern double mu_n;
+extern double inc_mut_rate;
+extern double mean_e_mutator;
+
+extern double shaped ;
+extern double scaled;
+extern double betab;
+
+extern double selecthighest;
+
+extern bool mutator_control;
+extern bool increased_mutator;
+extern bool del_dep;
+
+extern int run;
+
+
+void generate_results(vector<individual> popFinal,
+		array<array<int,t_growth>,t_bot> result_nOff,
+		array<array<double,t_growth>,t_bot> result_wMean,
+		array<double,t_bot> result_muScaled,
+		array<int,nmutator> mutator,
+		array<double,ngenes> s_del,
+		array<double,ngenes> s_ben,
+		array<double,nmutator> mut_e,
+		string fileheader,
+		int tbot){
+
+	string filename;
+	vector< vector<long int>> result_genome;
+	vector< vector<long int>> result_deleterious;
+	vector< vector<long int>> result_beneficial;
+	vector<long int> result_fitness;
+	for (unsigned int i00=0;i00<popFinal.size();++i00){
+		result_genome.push_back({});
+		result_genome[i00]=popFinal[i00].neuLocus;
+		result_deleterious.push_back({});
+		result_deleterious[i00]=popFinal[i00].delLocus;
+		result_beneficial.push_back({});
+		result_beneficial[i00]=popFinal[i00].benLocus;
+		result_fitness.push_back(popFinal[i00].w);
+	}
+
+	vector< vector <int>> result_mutator;
+	if(mutator_control){
+		for (unsigned int i00=0;i00<popFinal.size();++i00){
+			result_mutator.push_back({});
+			for (int i01=0;i01<nmutator;++i01){
+				for (unsigned long int i02=0;i02<popFinal[i00].benLocus.size();++i02){
+					if (mutator[i01]==popFinal[i00].benLocus[i02]){
+						result_mutator[i00].push_back(mutator[i01]);
+					}
+				}
+			}
+		}
+	}
+
+	{
+	filename=fileheader+"_popfinal"+fileformat;
+
+	ofstream fout(filename.c_str());  // default mode is ios::out | ios::trunc
+
+	for (unsigned int i00=0;i00<popFinal.size();++i00){
+		fout << popFinal[i00].ID << " | ";
+
+		for (unsigned long int i01=0;i01<popFinal[i00].neuLocus.size();++i01){
+			fout << popFinal[i00].neuLocus[i01] << " , ";
+		}
+		fout << " | ";
+		for (unsigned long int i01=0;i01<popFinal[i00].delLocus.size();++i01){
+			fout << popFinal[i00].delLocus[i01] << " , ";
+		}
+		fout << " | ";
+		for (unsigned long int i01=0;i01<popFinal[i00].benLocus.size();++i01){
+			fout << popFinal[i00].benLocus[i01] << " , ";
+		}
+
+		fout << " | " << popFinal[i00].w << " | " <<
+				popFinal[i00].nOff << " | " <<
+				popFinal[i00].rel_mu << " | " << endl;
+	}
+	fout.close();
+	}
+
+	{
+	filename=fileheader+"_genome"+fileformat;
+	ofstream fout(filename.c_str());  // default mode is ios::out | ios::trunc
+	for (unsigned int i00=0;i00<popFinal.size();++i00){
+		for (unsigned long int i01=0;i01<result_genome[i00].size();++i01){
+			fout << result_genome[i00][i01] << " , " ;
+		}
+		fout << endl;
+	}
+	fout.close();
+	}
+
+	{
+	filename=fileheader+"_deleterious"+fileformat;
+	ofstream fout(filename.c_str());  // default mode is ios::out | ios::trunc
+	for (unsigned int i00=0;i00<popFinal.size();++i00){
+		for (unsigned long int i01=0;i01<result_deleterious[i00].size();++i01){
+			fout << result_deleterious[i00][i01] << " , " ;
+		}
+		fout << endl;
+	}
+	fout.close();
+	}
+
+	{
+	filename=fileheader+"_beneficial"+fileformat;
+	ofstream fout(filename.c_str());  // default mode is ios::out | ios::trunc
+	for (unsigned int i00=0;i00<popFinal.size();++i00){
+		for (unsigned long int i01=0;i01<result_beneficial[i00].size();++i01){
+			fout << result_beneficial[i00][i01] << " , " ;
+		}
+		fout << endl;
+	}
+	fout.close();
+	}
+
+	{
+	if (mutator_control){
+		filename=fileheader+"_mutator"+fileformat;
+		ofstream fout(filename.c_str());  // default mode is ios::out | ios::trunc
+		for (unsigned int i00=0;i00<popFinal.size();++i00){
+			for (unsigned long int i01=0;i01<result_mutator[i00].size();++i01){
+				fout << result_mutator[i00][i01] << " , " ;
+			}
+			fout << endl;
+		}
+		fout.close();
+	}
+	}
+
+	{
+	filename=fileheader+"_meanfitness"+fileformat;
+	ofstream fout(filename.c_str());  // default mode is ios::out | ios::trunc
+	for (unsigned int i00=0;i00<t_bot;++i00){
+		for (unsigned  int i01=0;i01<t_growth;++i01){
+			fout << result_wMean[i00][i01] << " , " ;
+		}
+		fout << endl;
+	}
+	fout.close();
+	}
+
+	{
+	filename=fileheader+"_offspringnum"+fileformat;
+	ofstream fout(filename.c_str());  // default mode is ios::out | ios::trunc
+	for (unsigned int i00=0;i00<t_bot;++i00){
+		for (unsigned  int i01=0;i01<t_growth;++i01){
+			fout << result_nOff[i00][i01] << " , " ;
+		}
+		fout << endl;
+	}
+	fout.close();
+	}
+
+	array<long int, t_bot> result_nNeu;
+	array<double, t_bot> result_rNeu;
+	array<long int, t_bot> result_nDel;
+	array<double, t_bot> result_rDel;
+	array<long int, t_bot> result_nBen;
+	array<double, t_bot> result_rBen;
+	array<long int, t_bot> result_nMut;
+	array<double, t_bot> result_w;
+	for (int i00=0;i00<tbot;++i00){
+		result_nNeu[i00]=result_genome[i00].size();
+		result_rNeu[i00]=result_nNeu[i00]/(double)l;
+		result_nDel[i00]=result_deleterious[i00].size();
+		result_rDel[i00]=result_nDel[i00]/(double)ngenes;
+		result_nBen[i00]=result_beneficial[i00].size();
+		result_rBen[i00]=result_nBen[i00]/(double)ngenes;
+		if (mutator_control){
+			result_nMut[i00]=result_mutator[i00].size();
+		}
+		else{
+			result_nMut[i00]=0;
+		}
+		result_w[i00]=result_fitness[i00];
+	}
+
+	{
+	filename=fileheader+"_summary"+fileformat;
+	ofstream fout(filename.c_str());  // default mode is ios::out | ios::trunc
+	for (int i00=0;i00<tbot;++i00){
+		fout << " | " << result_nNeu[i00] << " | "
+				<< result_rNeu[i00] << " | "
+				<< result_nDel[i00] << " | "
+				<< result_rDel[i00] << " | "
+				<< result_nBen[i00] << " | "
+				<< result_rBen[i00] << " | "
+				<< result_nMut[i00] << " | "
+				<< result_muScaled[i00] << " | "
+				<< result_w[i00] << " | "
+				<< endl;
+	}
+	fout.close();
+	}
+
+	{
+	filename=fileheader+"_coefficients"+fileformat;
+	ofstream fout(filename.c_str());  // default mode is ios::out | ios::trunc
+	for (int i00=0;i00<nmutator;++i00){
+		fout << mutator[i00] << " , ";
+	}
+	fout << endl;
+	for (int i00=0;i00<nmutator;++i00){
+		fout << mut_e[i00] << " , ";
+	}
+	fout << endl;
+	for (int i00=0;i00<ngenes;++i00){
+		fout << s_del[i00] << " , " ;
+	}
+	fout << endl;
+	for (int i00=0;i00<ngenes;++i00){
+		fout << s_ben[i00] << " , " ;
+	}
+	fout << endl;
+	fout.close();
+	}
+	return;
+}
 
 int main() {
 	clock_t begin=clock();
-	const int t_bot = 50;
-	const int t_growth = 25;
-	const long int ngenes = 4400;
-	const long int l = 4640000;
-	double mu_d = 0.9;
-	double mu_b = 0.001;
-	double mu_n = 9.9;
-	double shaped = 0.1;
-	double scaled = 0.3;
-	double betab = 0.01;
-	const int nmutator=20;
-	double inc_mut_rate=0.1;
-	double mean_e_mutator=0.9;
-	double selecthighest=0.9;
 
-	bool mutator_control=true;
-	bool increased_mutator=true;
-	bool del_dep= true;
+	string fileheader;
+	if (mutator_control && increased_mutator && del_dep){
+		fileheader="deldepn";
+	}
+	if (mutator_control && increased_mutator && !del_dep){
+		fileheader="incmttr";
+	}
+	if (mutator_control && !increased_mutator){
+		fileheader="mutator";
+	}
+	if (!mutator_control){
+		fileheader="nomuttr";
+	}
 
-	//int run=0;
+	fileheader += "_";
+	fileheader += to_string(run);
 
 	long int initialN=1;
-	//int tbot=1;
+	int tbot=1;
 	double w_next=1;
 	double mu_next=1;
-
+	double mu_scaled=1;
 
 	double mu_neu=mu_n/l;
 	double mu_del=mu_d/l;
 	double mu_ben=mu_b/l;
-
-	double mu_scaled=1;
-
 
 	random_device rd;
 	//mt19937 gen (rd());
@@ -158,14 +424,12 @@ int main() {
 	array<array<double,t_growth>,t_bot> result_wMean;
 	array<double,t_bot> result_muScaled;
 
-	vector<int> neuLoci;
-	vector<int> delLoci;
-	vector<int> benLoci;
-
+	vector<long int> neuLoci;
+	vector<long int> delLoci;
+	vector<long int> benLoci;
 
 	individual initialind={0,{},{},{},1,1,2};
 
-	vector<individual> pop;
 	long int sumOff;
 	long int nhighest;
 	long int poolsize; //= new long int;
@@ -178,7 +442,8 @@ int main() {
 	for (int i1=0;i1<t_bot;++i1){
 		clock_t lap0 = clock();
 		long int n=initialN;
-		pop.clear();
+		{
+		vector<individual> pop;
 		for (long int i00=0;i00<n;++i00){
 			pop.push_back(initialind);
 		}
@@ -206,12 +471,14 @@ int main() {
 			}
 		}
 
-
 		sumOff=0;
 		for (int i00=0;i00<n;++i00){
 			sumOff=pop[i00].nOff;
 		}
 		if (sumOff<=0){
+			generate_results(popFinal,result_nOff, result_wMean,
+				result_muScaled, mutator,s_del, s_ben,mut_e,
+				fileheader,tbot);
 			clock_t end = clock();
 			double es = double(end - begin);
 			cout << "Extinction at bottleneck" << endl;
@@ -235,7 +502,6 @@ int main() {
 				}
 			}
 			n=sumOff;
-
 			for (long int i00=0;i00<n;++i00){
 				pop[i00].ID=i00;
 			}
@@ -245,147 +511,145 @@ int main() {
 			poisson_distribution<long int> dist11(n*l*muDel[i1][i2]);
 			poisson_distribution<long int> dist12(n*l*muBen[i1][i2]);
 			uniform_int_distribution<long int> dist13(0,n-1);
-
 			long int nNeu=dist10(gen);
 			long int nDel=dist11(gen);
 			long int nBen=dist12(gen);
 
-
 			{
 				{
-				mutlist neu[100000];
 				while (nNeu>100000){
+					{
 					int rmu;
+					mutlist neu;
 					for (long int i00=0;i00<100000;++i00){
-						neu[i00].mutInd=dist13(gen);
-						neu[i00].mut=dist6(gen);
-						rmu=1000*pop[neu[i00].mutInd].rel_mu;
+						neu.mutInd=dist13(gen);
+						neu.mut=dist6(gen);
+						rmu=1000*pop[neu.mutInd].rel_mu;
 						rmu=max(0,rmu);
 						while (rmu>1000){
-							pop[neu[i00].mutInd].neuLocus.push_back(neu[i00].mut);
-							neu[i00].mut=dist6(gen);
+							pop[neu.mutInd].neuLocus.push_back(neu.mut);
+							neu.mut=dist6(gen);
 							rmu-=1000;
 						}
-						neu[i00].success=success[rmu][dist17(gen)];
-					}
-					for (long int i00=0;i00<100000;++i00){
-						if (neu[i00].success){
-							pop[neu[i00].mutInd].neuLocus.push_back(neu[i00].mut);
+						neu.success=success[rmu][dist17(gen)];
+						if (neu.success){
+							pop[neu.mutInd].neuLocus.push_back(neu.mut);
 						}
+					}
 					}
 					nNeu-=100000;
 				}
 				}
-				mutlist neu[nNeu];
+				{
+				mutlist neu;
 				int rmu;
 				for (long int i00=0;i00<nNeu;++i00){
-					neu[i00].mutInd=dist13(gen);
-					neu[i00].mut=dist14(gen);
-					rmu=1000*pop[neu[i00].mutInd].rel_mu;
+					neu.mutInd=dist13(gen);
+					neu.mut=dist14(gen);
+					rmu=1000*pop[neu.mutInd].rel_mu;
 					rmu=max(0,rmu);
 					while (rmu>1000){
-						pop[neu[i00].mutInd].neuLocus.push_back(neu[i00].mut);
-						neu[i00].mut=dist6(gen);
+						pop[neu.mutInd].neuLocus.push_back(neu.mut);
+						neu.mut=dist6(gen);
 						rmu-=1000;
 					}
-					neu[i00].success=success[rmu][dist17(gen)];
-				}
-				for (long int i00=0;i00<nNeu;++i00){
-					if (neu[i00].success){
-						pop[neu[i00].mutInd].neuLocus.push_back(neu[i00].mut);
+					neu.success=success[rmu][dist17(gen)];
+					if (neu.success){
+						pop[neu.mutInd].neuLocus.push_back(neu.mut);
 					}
+				}
 				}
 			}
 
 			{
 				{
-				mutlist del[100000];
+
 				while (nDel>100000){
+					{
+					mutlist del;
 					int rmu;
 					for (long int i00=0;i00<100000;++i00){
-						del[i00].mutInd=dist13(gen);
-						del[i00].mut=dist6(gen);
-						rmu=1000*pop[del[i00].mutInd].rel_mu;
+						del.mutInd=dist13(gen);
+						del.mut=dist6(gen);
+						rmu=1000*pop[del.mutInd].rel_mu;
 						rmu=max(0,rmu);
 						while (rmu>1000){
-							pop[del[i00].mutInd].delLocus.push_back(del[i00].mut);
-							del[i00].mut=dist6(gen);
+							pop[del.mutInd].delLocus.push_back(del.mut);
+							del.mut=dist6(gen);
 							rmu-=1000;
 						}
-						del[i00].success=success[rmu][dist17(gen)];
-					}
-					for (long int i00=0;i00<100000;++i00){
-						if (del[i00].success && !(find(delLoci.begin(),delLoci.end(),del[i00].mut)!=delLoci.end())){
-							pop[del[i00].mutInd].delLocus.push_back(del[i00].mut);
-							pop[del[i00].mutInd].w-=s_del[del[i00].mut];
-							pop[del[i00].mutInd].nOff=round(pop[del[i00].mutInd].w*2.5-0.1);
-							pop[del[i00].mutInd].nOff=max(0,min(3,pop[del[i00].mutInd].nOff));
+						del.success=success[rmu][dist17(gen)];
+						if (del.success && !(find(delLoci.begin(),delLoci.end(),del.mut)!=delLoci.end())){
+							pop[del.mutInd].delLocus.push_back(del.mut);
+							pop[del.mutInd].w-=s_del[del.mut];
+							pop[del.mutInd].nOff=round(pop[del.mutInd].w*2.5-0.1);
+							pop[del.mutInd].nOff=max(0,min(3,pop[del.mutInd].nOff));
 							for (int i01=0;i01<nmutator;++i01){
-								if(del[i00].mut==mutator[i01]){
-									(pop[del[i00].mutInd].rel_mu)/=mut_e[i01];
+								if(del.mut==mutator[i01]){
+									(pop[del.mutInd].rel_mu)/=mut_e[i01];
 								}
 							}
-						}
+							}
+					}
 					}
 					nDel-=100000;
 				}
 				}
-				mutlist del[nDel];
+				{
+				mutlist del;
 				int rmu;
 				for (long int i00=0;i00<nDel;++i00){
-					del[i00].mutInd=dist13(gen);
-					del[i00].mut=dist6(gen);
-					rmu=1000*pop[del[i00].mutInd].rel_mu;
+					del.mutInd=dist13(gen);
+					del.mut=dist6(gen);
+					rmu=1000*pop[del.mutInd].rel_mu;
 					rmu=max(0,rmu);
 					while (rmu>1000){
-						pop[del[i00].mutInd].delLocus.push_back(del[i00].mut);
-						del[i00].mut=dist6(gen);
+						pop[del.mutInd].delLocus.push_back(del.mut);
+						del.mut=dist6(gen);
 						rmu-=1000;
 					}
-					del[i00].success=success[rmu][dist17(gen)];
-				}
-				for (long int i00=0;i00<nDel;++i00){
-					if (del[i00].success && !(find(delLoci.begin(),delLoci.end(),del[i00].mut)!=delLoci.end())){
-						pop[del[i00].mutInd].delLocus.push_back(del[i00].mut);
-						pop[del[i00].mutInd].w-=s_del[del[i00].mut];
-						pop[del[i00].mutInd].nOff=round(pop[del[i00].mutInd].w*2.5-0.1);
-						pop[del[i00].mutInd].nOff=max(0,min(3,pop[del[i00].mutInd].nOff));
+					del.success=success[rmu][dist17(gen)];
+					if (del.success && !(find(delLoci.begin(),delLoci.end(),del.mut)!=delLoci.end())){
+						pop[del.mutInd].delLocus.push_back(del.mut);
+						pop[del.mutInd].w-=s_del[del.mut];
+						pop[del.mutInd].nOff=round(pop[del.mutInd].w*2.5-0.1);
+						pop[del.mutInd].nOff=max(0,min(3,pop[del.mutInd].nOff));
 						for (int i01=0;i01<nmutator;++i01){
-							if(del[i00].mut==mutator[i01]){
-								(pop[del[i00].mutInd].rel_mu)/=mut_e[i01];
+							if(del.mut==mutator[i01]){
+								(pop[del.mutInd].rel_mu)/=mut_e[i01];
 							}
+						}
+					}
+				}
+				}
+			}
+
+			{
+			mutlist ben;
+			int rmu;
+			for (long int i00=0;i00<nBen;++i00){
+				ben.mutInd=dist13(gen);
+				ben.mut=dist6(gen);
+				rmu=1000*pop[ben.mutInd].rel_mu;
+				while (rmu>1000){
+					pop[ben.mutInd].neuLocus.push_back(ben.mut);
+					ben.mut=dist6(gen);
+					rmu-=1000;
+				}
+				ben.success=success[rmu][dist17(gen)];
+				if (ben.success && !(find(benLoci.begin(),benLoci.end(),ben.mut)!=benLoci.end())){
+					pop[ben.mutInd].benLocus.push_back(ben.mut);
+					pop[ben.mutInd].w+=s_ben[ben.mut];
+					pop[ben.mutInd].nOff=round(pop[ben.mutInd].w*2.5-0.1);
+					pop[ben.mutInd].nOff=max(0,min(3,pop[ben.mutInd].nOff));
+					for (int i01=0;i01<nmutator;++i01){
+						if(ben.mut==mutator[i01]){
+							pop[ben.mutInd].rel_mu*=mut_e[i01];
 						}
 					}
 				}
 			}
 
-			{
-			mutlist ben[nBen];
-			int rmu;
-			for (long int i00=0;i00<nBen;++i00){
-				ben[i00].mutInd=dist13(gen);
-				ben[i00].mut=dist6(gen);
-				rmu=1000*pop[ben[i00].mutInd].rel_mu;
-				while (rmu>1000){
-					pop[ben[i00].mutInd].neuLocus.push_back(ben[i00].mut);
-					ben[i00].mut=dist6(gen);
-					rmu-=1000;
-				}
-				ben[i00].success=success[rmu][dist17(gen)];
-			}
-			for (long int i00=0;i00<nBen;++i00){
-				if (ben[i00].success && !(find(benLoci.begin(),benLoci.end(),ben[i00].mut)!=benLoci.end())){
-					pop[ben[i00].mutInd].benLocus.push_back(ben[i00].mut);
-					pop[ben[i00].mutInd].w+=s_ben[ben[i00].mut];
-					pop[ben[i00].mutInd].nOff=round(pop[ben[i00].mutInd].w*2.5-0.1);
-					pop[ben[i00].mutInd].nOff=max(0,min(3,pop[ben[i00].mutInd].nOff));
-					for (int i01=0;i01<nmutator;++i01){
-						if(ben[i00].mut==mutator[i01]){
-							pop[ben[i00].mutInd].rel_mu*=mut_e[i01];
-						}
-					}
-				}
-			}
 			}
 			}
 
@@ -402,6 +666,11 @@ int main() {
 			}
 
 			if (sumOff<=0){
+				tbot=i1+1;
+				generate_results(popFinal,result_nOff, result_wMean,
+						result_muScaled, mutator,s_del, s_ben,mut_e,
+						fileheader,tbot);
+
 				cout << "Extinction at growth" << endl;
 				cout << "t_bot= " << i1 << endl;
 				cout << "t_growth= " << i2 << endl;
@@ -452,7 +721,7 @@ int main() {
 
 		}
 		tmpf=pop[luckyInd];
-
+		}
 		for (unsigned long int i00=0;i00<tmpf.neuLocus.size();++i00){
 			neuLoci.push_back(tmpf.neuLocus[i00]);
 		}
@@ -468,21 +737,22 @@ int main() {
 		w_next=tmpf.w;
 		mu_next=tmpf.rel_mu;
 
-		//tbot=i1+1;
+		tbot=i1+1;
 		popFinal.push_back(tmpf);
 
 		clock_t end = clock();
 		double es = double(end - lap0);
 		cout << "finished Bot " << i1 << " time= " << es << endl;
 	}
-
+	generate_results(popFinal,result_nOff, result_wMean,
+			result_muScaled, mutator,s_del, s_ben,mut_e,
+			fileheader,tbot);
 	clock_t end = clock();
 	double es = double(end - begin);
 	cout << "End of simulation" << " time= " << es << endl;
 
 	return 0;
 }
-
 
 
 
