@@ -653,8 +653,8 @@ int main() {
 						fileheader,tbot);
 
 				cout << "Extinction at growth" << endl;
-				cout << "t_bot= " << i1 << endl;
-				cout << "t_growth= " << i2 << endl;
+				cout << "t_bot= " << i1+1 << endl;
+				cout << "t_growth= " << i2+1 << endl;
 
 				clock_t end = clock();
 				double es = double(end - begin);
@@ -665,7 +665,7 @@ int main() {
 
 				clock_t end = clock();
 				double es = double(end - lap);
-				cout << "Finished Gen " << i2 << " in Bot " << i1 << " n= " << n << " time= " << es << endl;
+				cout << "Finished Gen " << i2+1 << " in Bot " << i1 << " n= " << n << " time= " << es << endl;
 				cout << "Population over a million" << endl;
 				break;
 			}
@@ -673,7 +673,7 @@ int main() {
 
 			clock_t end = clock();
 			double es = double(end - lap);
-			cout << "Finished Gen " << i2 << " in Bot " << i1 << " n= " << n << " time= " << es << endl;
+			cout << "Finished Gen " << i2+1 << " in Bot " << i1+1 << " n= " << n << " time= " << es << endl;
 			}
 		}
 
@@ -734,6 +734,3 @@ int main() {
 
 	return 0;
 }
-
-
-
