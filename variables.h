@@ -5,32 +5,33 @@
  *      Author: ozan
  */
 
-#ifndef VARIABLES_H_
-#define VARIABLES_H_
+#ifndef __VARIABLES_H_
+#define __VARIABLES_H_
 
-extern const int t_bot;
-extern const int t_growth;
 
-extern const long int ngenes;
-extern const long int l;
-extern const int nmutator;
+#define T_bot 					50
+#define T_growth		 		25
 
-extern double mu_d;
-extern double mu_b;
-extern double mu_n;
-extern double inc_mut_rate;
-extern double mean_e_mutator;
+#define Ngenes 					4400
+#define L 						4600000
+#define Nmutator				20
 
-extern double shaped ;
-extern double scaled;
-extern double betab;
+#define Mu_d					0.9
+#define Mu_b					0.001
+#define Mu_n 					9.9
+#define Inc_mut_rate			0.1
+#define Mean_e_mutator			0.05
 
-extern double selecthighest;
+#define Shaped 					0.1
+#define Scaled					0.3
+#define Betab					0.01
 
-extern bool mutator_control;
-extern bool increased_mutator;
-extern bool del_dep;
+#define Selecthighest 			0.4
 
-extern int run;
+#define Mutator_control 		1
+#define Increased_mutator		1
+#define Del_dep					1
+
+#define Run						0
 
 #endif /* VARIABLES_H_ */
