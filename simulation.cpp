@@ -63,52 +63,27 @@ string fileformat=".out";
 
 bool acompare(wlist lhs, wlist rhs) { return lhs.w > rhs.w; }
 
-/*
-const int t_bot=_t_bot;// = 2;
-const int t_growth=_t_growth;// = 10;
-const long int ngenes=_ngenes;// = 4400;
-const long int l=_l;// = 4640000;
-double mu_d=_mu_d;// = 0.9;
-double mu_b=_mu_b;// = 0.001;
-double mu_n=_mu_n;// = 9.9;
-double shaped=_shaped;// = 0.1;
-double scaled=_scaled;// = 0.3;
-double betab=_betab;// = 0.01;
-const int nmutator=_nmutator;//=20;
-double inc_mut_rate=_inc_mut_rate;//=0.1;
-double mean_e_mutator=_mean_e_mutator;//=0.9;
-double selecthighest=_selecthighest;//=0.9;
 
-bool mutator_control=_mutator_control;//=true;
-bool increased_mutator=_increased_mutator;//=true;
-bool del_dep=_del_dep;//= true;
+const int t_bot = T_bot;
+const int t_growth = T_growth;
+const long int ngenes = Ngenes;
+const long int l = L;
+double mu_d = Mu_d;
+double mu_b = Mu_b;
+double mu_n = Mu_n;
+double shaped = Shaped;
+double scaled = Scaled;
+double betab = Betab;
+const int nmutator = Nmutator;
+double inc_mut_rate = Inc_mut_rate;
+double mean_e_mutator = Mean_e_mutator;
+double selecthighest = Selecthighest;
 
-int run=_run;//=0;
-*/
-extern const int t_bot;
-extern const int t_growth;
+bool mutator_control = Mutator_control;
+bool increased_mutator = Increased_mutator;
+bool del_dep = Del_dep;
 
-extern const long int ngenes;
-extern const long int l;
-extern const int nmutator;
-
-extern double mu_d;
-extern double mu_b;
-extern double mu_n;
-extern double inc_mut_rate;
-extern double mean_e_mutator;
-
-extern double shaped ;
-extern double scaled;
-extern double betab;
-
-extern double selecthighest;
-
-extern bool mutator_control;
-extern bool increased_mutator;
-extern bool del_dep;
-
-extern int run;
+int run = Run;
 
 
 void generate_results(vector<individual> popFinal,
