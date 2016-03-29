@@ -1,9 +1,9 @@
 //============================================================================
 // Name        : simulation.cpp
-// Author      : ozan
-// Version     :
-// Copyright   : Your copyright notice
-// Description : Hello World in C++, Ansi-style
+// Author      : ozan kiratli - ozankiratli@gmail.com
+// Version     : 0.1
+// Copyright   : Contact author before scientific use.
+// Description : Individual based haploid population simulation with bottlenecking feature
 //============================================================================
 
 #include <iostream>
