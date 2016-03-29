@@ -1,17 +1,12 @@
 # haploid-bottleneck
 An individual based simulation for haploid populations with bottlenecking feature. 
 
+UNDER DEVELOPMENT\n \n
 
+*** First working copy\n
+*** Bash script development is in progress\n
 
-UNDER DEVELOPMENT
-
-
-
-*** First working copy
-
-*** Bash script development is in progress
-
-*** A full user manual and instructions will be available soon. 
+*** A full user manual and instructions will be available soon. \n
 
 
 
