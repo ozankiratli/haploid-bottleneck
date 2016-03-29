@@ -665,7 +665,7 @@ int main() {
 
 				clock_t end = clock();
 				double es = double(end - lap);
-				cout << "Finished Gen " << i2+1 << " in Bot " << i1 << " n= " << n << " time= " << es << endl;
+				cout << "Finished Gen " << i2+1 << " in Bot " << i1+1 << " n= " << n << " time= " << es << endl;
 				cout << "Population over a million" << endl;
 				break;
 			}
