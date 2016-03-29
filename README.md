@@ -2,7 +2,9 @@
 An individual based simulation for haploid populations with bottlenecking feature. 
 
 
+
 UNDER DEVELOPMENT
+
 
 
 *** First working copy
