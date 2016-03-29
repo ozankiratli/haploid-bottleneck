@@ -101,7 +101,7 @@ void generate_results(vector<individual> popFinal,
 	vector< vector<long int>> result_genome;
 	vector< vector<long int>> result_deleterious;
 	vector< vector<long int>> result_beneficial;
-	vector<long int> result_fitness;
+	vector<double> result_fitness;
 	for (unsigned int i00=0;i00<popFinal.size();++i00){
 		result_genome.push_back({});
 		result_genome[i00]=popFinal[i00].neuLocus;
@@ -119,6 +119,11 @@ void generate_results(vector<individual> popFinal,
 			for (int i01=0;i01<nmutator;++i01){
 				for (unsigned long int i02=0;i02<popFinal[i00].benLocus.size();++i02){
 					if (mutator[i01]==popFinal[i00].benLocus[i02]){
+						result_mutator[i00].push_back(mutator[i01]);
+					}
+				}
+				for (unsigned long int i02=0;i02<popFinal[i00].delLocus.size();++i02){
+					if (mutator[i01]==popFinal[i00].delLocus[i02]){
 						result_mutator[i00].push_back(mutator[i01]);
 					}
 				}
@@ -317,7 +322,8 @@ int main() {
 	int tbot=1;
 	double w_next=1;
 	double mu_next=1;
-	double mu_scaled=1;
+
+	double lambdab=1/betab;
 
 	double mu_neu=mu_n/l;
 	double mu_del=mu_d/l;
@@ -330,35 +336,35 @@ int main() {
 	normal_distribution<double> dist2(mu_del,0.1*mu_del);
 	normal_distribution<double> dist3(mu_ben,0.1*mu_ben);
 	gamma_distribution<double> dist4(shaped,scaled);
-	exponential_distribution<double> dist5(betab);
+	exponential_distribution<double> dist5(lambdab);
 	uniform_int_distribution<long int> dist6(0,ngenes-1);
-	normal_distribution<double> dist7(mean_e_mutator,0.1*mean_e_mutator);
+	normal_distribution<double> dist7(mean_e_mutator,0.01*mean_e_mutator);
 	poisson_distribution<int> dist8(inc_mut_rate);
 	uniform_int_distribution<int> dist9(0,nmutator-1);
 	uniform_int_distribution<long int> dist14(0,l-1);
 	uniform_int_distribution<int> dist17(0,1000);
 
-	array<array<bool,1000>,1000> success;
+	array<array<bool,1001>,1001> success;
 	for (int i00=0;i00<500;++i00){
-		for (int i01=0;i01<1000;++i01){
+		for (int i01=0;i01<1001;++i01){
 			success[i00][i01]=0;
 		}
 	}
-	for (int i00=500;i00<1000;++i00){
-		for (int i01=0;i01<1000;++i01){
+	for (int i00=500;i00<1001;++i00){
+		for (int i01=0;i01<1001;++i01){
 			success[i00][i01]=1;
 		}
 	}
 
 	for (int i00=0;i00<500;++i00){
-		for (int i01=0;i01<=i00;++i01){
+		for (int i01=0;i01<i00;++i01){
 			int place=dist17(gen);
 			while (success[i00][place]==1) place=dist17(gen);
 			success[i00][place]=1;
 		}
 	}
-	for (int i00=500;i00<1000;++i00){
-		for (int i01=0;i01<=1000-i00;++i01){
+	for (int i00=500;i00<1001;++i00){
+		for (int i01=0;i01<1001-i00;++i01){
 			int place=dist17(gen);
 			while (success[i00][place]==0) place=dist17(gen);
 			success[i00][place]=0;
@@ -407,7 +413,7 @@ int main() {
 
 	long int sumOff;
 	long int nhighest;
-	long int poolsize; //= new long int;
+	long int poolsize;
 	long int one=1;
 	individual tmpf;
 	long int luckyInd;
@@ -462,7 +468,7 @@ int main() {
 			exit(0);
 		}
 
-		result_muScaled[i1]=mu_scaled;
+		result_muScaled[i1]=mu_next;
 
 		for (int i2=0;i2<t_growth;++i2){
 			clock_t lap = clock();
@@ -641,7 +647,7 @@ int main() {
 			}
 
 			if (sumOff<=0){
-				tbot=i1+1;
+				tbot=i1;
 				generate_results(popFinal,result_nOff, result_wMean,
 						result_muScaled, mutator,s_del, s_ben,mut_e,
 						fileheader,tbot);
