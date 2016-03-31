@@ -19,8 +19,13 @@
 #include <ctime>
 #include <fstream>
 #include "variables.h"
-
 using namespace std;
+
+struct mutation
+{
+	long int locus;
+	int hit;
+};
 
 struct individual
 {
@@ -28,6 +33,8 @@ struct individual
 	vector<long int> neuLocus;
 	vector<long int> delLocus;
 	vector<long int> benLocus;
+	//vector<mutation> delLocus;
+	//vector<mutation> benLocus;
 	double rel_mu;
 	double w;
 	int nOff;
@@ -55,6 +62,7 @@ struct resultsum
 	long int nBene;
 	double rBene;
 	long int nMuta;
+	long int nAMut;
 	double muScale;
 	double w;
 };
@@ -62,7 +70,6 @@ struct resultsum
 string fileformat=".out";
 
 bool acompare(wlist lhs, wlist rhs) { return lhs.w > rhs.w; }
-
 
 const int t_bot = T_bot;
 const int t_growth = T_growth;
@@ -78,13 +85,10 @@ const int nmutator = Nmutator;
 double inc_mut_rate = Inc_mut_rate;
 double mean_e_mutator = Mean_e_mutator;
 double selecthighest = Selecthighest;
-
 bool mutator_control = Mutator_control;
 bool increased_mutator = Increased_mutator;
 bool del_dep = Del_dep;
-
 int run = Run;
-
 
 void generate_results(vector<individual> popFinal,
 		array<array<int,t_growth>,t_bot> result_nOff,
@@ -113,15 +117,21 @@ void generate_results(vector<individual> popFinal,
 	}
 
 	vector< vector <int>> result_mutator;
+	vector< vector <int>> result_antimutator;
 	if(mutator_control){
 		for (unsigned int i00=0;i00<popFinal.size();++i00){
-			result_mutator.push_back({});
+			result_antimutator.push_back({});
 			for (int i01=0;i01<nmutator;++i01){
 				for (unsigned long int i02=0;i02<popFinal[i00].benLocus.size();++i02){
 					if (mutator[i01]==popFinal[i00].benLocus[i02]){
-						result_mutator[i00].push_back(mutator[i01]);
+						result_antimutator[i00].push_back(mutator[i01]);
 					}
 				}
+			}
+		}
+		for (unsigned int i00=0;i00<popFinal.size();++i00){
+			result_mutator.push_back({});
+			for (int i01=0;i01<nmutator;++i01){
 				for (unsigned long int i02=0;i02<popFinal[i00].delLocus.size();++i02){
 					if (mutator[i01]==popFinal[i00].delLocus[i02]){
 						result_mutator[i00].push_back(mutator[i01]);
@@ -133,12 +143,9 @@ void generate_results(vector<individual> popFinal,
 
 	{
 	filename=fileheader+"_popfinal"+fileformat;
-
 	ofstream fout(filename.c_str());  // default mode is ios::out | ios::trunc
-
 	for (unsigned int i00=0;i00<popFinal.size();++i00){
 		fout << popFinal[i00].ID << " | ";
-
 		for (unsigned long int i01=0;i01<popFinal[i00].neuLocus.size();++i01){
 			fout << popFinal[i00].neuLocus[i01] << " , ";
 		}
@@ -150,7 +157,6 @@ void generate_results(vector<individual> popFinal,
 		for (unsigned long int i01=0;i01<popFinal[i00].benLocus.size();++i01){
 			fout << popFinal[i00].benLocus[i01] << " , ";
 		}
-
 		fout << " | " << popFinal[i00].w << " | " <<
 				popFinal[i00].nOff << " | " <<
 				popFinal[i00].rel_mu << " | " << endl;
@@ -239,6 +245,7 @@ void generate_results(vector<individual> popFinal,
 	array<long int, t_bot> result_nBen;
 	array<double, t_bot> result_rBen;
 	array<long int, t_bot> result_nMut;
+	array<long int, t_bot> result_nAMt;
 	array<double, t_bot> result_w;
 	for (int i00=0;i00<tbot;++i00){
 		result_nNeu[i00]=result_genome[i00].size();
@@ -249,9 +256,11 @@ void generate_results(vector<individual> popFinal,
 		result_rBen[i00]=result_nBen[i00]/(double)ngenes;
 		if (mutator_control){
 			result_nMut[i00]=result_mutator[i00].size();
+			result_nAMt[i00]=result_antimutator[i00].size();
 		}
 		else{
 			result_nMut[i00]=0;
+			result_nAMt[i00]=0;
 		}
 		result_w[i00]=result_fitness[i00];
 	}
@@ -267,6 +276,7 @@ void generate_results(vector<individual> popFinal,
 				<< result_nBen[i00] << " | "
 				<< result_rBen[i00] << " | "
 				<< result_nMut[i00] << " | "
+				<< result_nAMt[i00] << " | "
 				<< result_muScaled[i00] << " | "
 				<< result_w[i00] << " | "
 				<< endl;
@@ -314,7 +324,6 @@ int main() {
 	if (!mutator_control){
 		fileheader="nomuttr";
 	}
-
 	fileheader += "_";
 	fileheader += to_string(run);
 
@@ -355,7 +364,6 @@ int main() {
 			success[i00][i01]=1;
 		}
 	}
-
 	for (int i00=0;i00<500;++i00){
 		for (int i01=0;i01<i00;++i01){
 			int place=dist17(gen);
@@ -421,9 +429,6 @@ int main() {
 	long int nhighest;
 	long int poolsize;
 	long int one=1;
-	individual tmpf;
-	long int luckyInd;
-	vector<wlist> w_list;
 	vector<individual> popFinal;
 
 	for (int i1=0;i1<t_bot;++i1){
@@ -474,8 +479,6 @@ int main() {
 			exit(0);
 		}
 
-		result_muScaled[i1]=mu_next;
-
 		for (int i2=0;i2<t_growth;++i2){
 			clock_t lap = clock();
 			for (long int i00=0;i00<n;++i00){
@@ -501,7 +504,6 @@ int main() {
 			long int nNeu=dist10(gen);
 			long int nDel=dist11(gen);
 			long int nBen=dist12(gen);
-
 			{
 				{
 				while (nNeu>100000){
@@ -561,8 +563,16 @@ int main() {
 						rmu=1000*pop[del.mutInd].rel_mu;
 						rmu=max(0,rmu);
 						while (rmu>1000){
-							pop[del.mutInd].delLocus.push_back(del.mut);
-							del.mut=dist6(gen);
+							if (!(find(delLoci.begin(),delLoci.end(),del.mut)!=delLoci.end())){
+								pop[del.mutInd].delLocus.push_back(del.mut);
+								del.mut=dist6(gen);
+								for (int i01=0;i01<nmutator;++i01){
+									if(del.mut==mutator[i01]){
+										pop[del.mutInd].rel_mu/=mut_e[i01];
+										pop[del.mutInd].rel_mu=max(0.0001,pop[del.mutInd].rel_mu);
+									}
+								}
+							}
 							rmu-=1000;
 						}
 						del.success=success[rmu][dist17(gen)];
@@ -592,8 +602,16 @@ int main() {
 					rmu=1000*pop[del.mutInd].rel_mu;
 					rmu=max(0,rmu);
 					while (rmu>1000){
-						pop[del.mutInd].delLocus.push_back(del.mut);
-						del.mut=dist6(gen);
+						if (!(find(delLoci.begin(),delLoci.end(),del.mut)!=delLoci.end())){
+							pop[del.mutInd].delLocus.push_back(del.mut);
+							del.mut=dist6(gen);
+							for (int i01=0;i01<nmutator;++i01){
+								if(del.mut==mutator[i01]){
+									pop[del.mutInd].rel_mu/=mut_e[i01];
+									pop[del.mutInd].rel_mu=max(0.0001,pop[del.mutInd].rel_mu);
+								}
+							}
+						}
 						rmu-=1000;
 					}
 					del.success=success[rmu][dist17(gen)];
@@ -604,8 +622,8 @@ int main() {
 						pop[del.mutInd].nOff=max(0,min(3,pop[del.mutInd].nOff));
 						for (int i01=0;i01<nmutator;++i01){
 							if(del.mut==mutator[i01]){
-								(pop[del.mutInd].rel_mu)/=mut_e[i01];
-								pop[del.mutInd].rel_mu=max(0.0001,pop[del.mutInd].rel_mu);
+								pop[del.mutInd].rel_mu/=mut_e[i01];
+								pop[del.mutInd].rel_mu=max(0.00,pop[del.mutInd].rel_mu);
 							}
 						}
 					}
@@ -613,34 +631,83 @@ int main() {
 				}
 			}
 
+
 			{
-			mutlist ben;
-			int rmu;
-			for (long int i00=0;i00<nBen;++i00){
-				ben.mutInd=dist13(gen);
-				ben.mut=dist6(gen);
-				rmu=1000*pop[ben.mutInd].rel_mu;
-				while (rmu>1000){
-					pop[ben.mutInd].neuLocus.push_back(ben.mut);
-					ben.mut=dist6(gen);
-					rmu-=1000;
+				while (nBen>100000){
+					{
+						mutlist ben;
+						int rmu;
+						for (long int i00=0;i00<100000;++i00){
+							ben.mutInd=dist13(gen);
+							ben.mut=dist6(gen);
+							rmu=1000*pop[ben.mutInd].rel_mu;
+							while (rmu>1000){
+								if (!(find(benLoci.begin(),benLoci.end(),ben.mut)!=benLoci.end())){
+									pop[ben.mutInd].neuLocus.push_back(ben.mut);
+									ben.mut=dist6(gen);
+									for (int i01=0;i01<nmutator;++i01){
+										if(ben.mut==mutator[i01]){
+											pop[ben.mutInd].rel_mu*=mut_e[i01];
+											pop[ben.mutInd].rel_mu=max(0.00,pop[ben.mutInd].rel_mu);
+										}
+									}
+								}
+								rmu-=1000;
+							}
+							ben.success=success[rmu][dist17(gen)];
+							if (ben.success && !(find(benLoci.begin(),benLoci.end(),ben.mut)!=benLoci.end())){
+								pop[ben.mutInd].benLocus.push_back(ben.mut);
+								pop[ben.mutInd].w+=s_ben[ben.mut];
+								pop[ben.mutInd].nOff=round(pop[ben.mutInd].w*2.5-0.1);
+								pop[ben.mutInd].nOff=max(0,min(3,pop[ben.mutInd].nOff));
+								for (int i01=0;i01<nmutator;++i01){
+									if(ben.mut==mutator[i01]){
+										pop[ben.mutInd].rel_mu*=mut_e[i01];
+										pop[ben.mutInd].rel_mu=max(0.00,pop[ben.mutInd].rel_mu);
+									}
+								}
+							}
+						}
+					}
+					nBen-=100000;
 				}
-				ben.success=success[rmu][dist17(gen)];
-				if (ben.success && !(find(benLoci.begin(),benLoci.end(),ben.mut)!=benLoci.end())){
-					pop[ben.mutInd].benLocus.push_back(ben.mut);
-					pop[ben.mutInd].w+=s_ben[ben.mut];
-					pop[ben.mutInd].nOff=round(pop[ben.mutInd].w*2.5-0.1);
-					pop[ben.mutInd].nOff=max(0,min(3,pop[ben.mutInd].nOff));
-					for (int i01=0;i01<nmutator;++i01){
-						if(ben.mut==mutator[i01]){
-							pop[ben.mutInd].rel_mu*=mut_e[i01];
-							pop[ben.mutInd].rel_mu=max(0.0001,pop[ben.mutInd].rel_mu);
+				}
+
+				{
+				mutlist ben;
+				int rmu;
+				for (long int i00=0;i00<nBen;++i00){
+					ben.mutInd=dist13(gen);
+					ben.mut=dist6(gen);
+					rmu=1000*pop[ben.mutInd].rel_mu;
+					while (rmu>1000){
+						if (!(find(benLoci.begin(),benLoci.end(),ben.mut)!=benLoci.end())){
+							pop[ben.mutInd].neuLocus.push_back(ben.mut);
+							ben.mut=dist6(gen);
+							for (int i01=0;i01<nmutator;++i01){
+								if(ben.mut==mutator[i01]){
+									pop[ben.mutInd].rel_mu*=mut_e[i01];
+									pop[ben.mutInd].rel_mu=max(0.00,pop[ben.mutInd].rel_mu);
+								}
+							}
+						}
+						rmu-=1000;
+					}
+					ben.success=success[rmu][dist17(gen)];
+					if (ben.success && !(find(benLoci.begin(),benLoci.end(),ben.mut)!=benLoci.end())){
+						pop[ben.mutInd].benLocus.push_back(ben.mut);
+						pop[ben.mutInd].w+=s_ben[ben.mut];
+						pop[ben.mutInd].nOff=round(pop[ben.mutInd].w*2.5-0.1);
+						pop[ben.mutInd].nOff=max(0,min(3,pop[ben.mutInd].nOff));
+						for (int i01=0;i01<nmutator;++i01){
+							if(ben.mut==mutator[i01]){
+								pop[ben.mutInd].rel_mu*=mut_e[i01];
+								pop[ben.mutInd].rel_mu=max(0.00,pop[ben.mutInd].rel_mu);
+							}
 						}
 					}
 				}
-			}
-
-			}
+				}
 			}
 
 			{
@@ -650,28 +717,23 @@ int main() {
 					sumOff+=pop[i00].nOff;
 					wtmp+=pop[i00].w;
 				}
-
 				result_nOff[i1][i2]=sumOff;
 				result_wMean[i1][i2]=wtmp/n;
 			}
-
 			if (sumOff<=0){
 				tbot=i1;
 				generate_results(popFinal,result_nOff, result_wMean,
 						result_muScaled, mutator,s_del, s_ben,mut_e,
 						fileheader,tbot);
-
 				cout << "Extinction at growth" << endl;
 				cout << "t_bot= " << i1+1 << endl;
 				cout << "t_growth= " << i2+1 << endl;
-
 				clock_t end = clock();
 				double es = double(end - begin);
 				cout << "time= " << es << endl;
 				exit(0);
 			}
 			if(n>1000000){
-
 				clock_t end = clock();
 				double es = double(end - lap);
 				cout << "Finished Gen " << i2+1 << " in Bot " << i1+1 << " n= " << n << " time= " << es << endl;
@@ -679,39 +741,33 @@ int main() {
 				break;
 			}
 			{
-
 			clock_t end = clock();
 			double es = double(end - lap);
 			cout << "Finished Gen " << i2+1 << " in Bot " << i1+1 << " n= " << n << " time= " << es << endl;
 			}
 		}
 
-
-		w_list.clear();
 		{
-			wlist ind;
-			for (long int i00=0;i00<n;++i00){
-				ind.ID=pop[i00].ID;
-				ind.w=pop[i00].w;
-				w_list.push_back(ind);
-			}
-
+		individual tmpf;
+		long int luckyInd;
+		{
+		vector<wlist> w_list;
+		wlist ind;
+		for (long int i00=0;i00<n;++i00){
+			ind.ID=pop[i00].ID;
+			ind.w=pop[i00].w;
+			w_list.push_back(ind);
+		}
 
 		sort(w_list.begin(),w_list.end(),acompare);
-
-
 		nhighest = round(n*selecthighest);
 		poolsize = max(one,nhighest);
-
 		uniform_int_distribution<long int> dist18(0,poolsize-1);
-
-
-			long int tmp = dist18(gen);
-			luckyInd = w_list[tmp].ID;
-
+		long int tmp = dist18(gen);
+		luckyInd = w_list[tmp].ID;
 		}
 		tmpf=pop[luckyInd];
-		}
+
 		for (unsigned long int i00=0;i00<tmpf.neuLocus.size();++i00){
 			neuLoci.push_back(tmpf.neuLocus[i00]);
 		}
@@ -724,15 +780,38 @@ int main() {
 			benLoci.push_back(tmpf.benLocus[i00]);
 		}
 		tmpf.benLocus=benLoci;
+
+		{
+		double tmprm=1.0;
+		for (unsigned long int i00=0;i00<tmpf.delLocus.size();++i00){
+			for (int i01=0;i01<nmutator;++i01){
+				if(tmpf.delLocus[i00]==mutator[i01]){
+					tmprm/=mut_e[i01];
+					tmprm=max(0.0001,tmprm);
+				}
+			}
+		}
+		for (unsigned long int i00=0;i00<tmpf.benLocus.size();++i00){
+			for (int i01=0;i01<nmutator;++i01){
+				if(tmpf.benLocus[i00]==mutator[i01]){
+					tmprm*=mut_e[i01];
+					tmprm=max(0.0001,tmprm);
+				}
+			}
+		}
+		tmpf.rel_mu=tmprm;
+		}
 		w_next=tmpf.w;
 		mu_next=tmpf.rel_mu;
-
 		tbot=i1+1;
 		popFinal.push_back(tmpf);
+		result_muScaled[i1]=mu_next;
+		}
+		}
 
 		clock_t end = clock();
 		double es = double(end - lap0);
-		cout << "finished Bot " << i1 << " time= " << es << endl;
+		cout << "finished Bot " << i1+1 << " time= " << es << endl;
 	}
 	generate_results(popFinal,result_nOff, result_wMean,
 			result_muScaled, mutator,s_del, s_ben,mut_e,
