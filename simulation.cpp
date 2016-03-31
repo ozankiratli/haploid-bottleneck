@@ -2,7 +2,7 @@
 // Name        : simulation.cpp
 // Author      : ozan kiratli - ozankiratli@gmail.com
 // Version     : 0.1
-// Copyright   : Contact author before scientific use.
+// Copyright   : Your copyright notice
 // Description : Individual based haploid population simulation with bottlenecking feature
 //============================================================================
 
@@ -568,6 +568,7 @@ int main() {
 							for (int i01=0;i01<nmutator;++i01){
 								if(del.mut==mutator[i01]){
 									(pop[del.mutInd].rel_mu)/=mut_e[i01];
+									pop[del.mutInd].rel_mu=max(0.0001,pop[del.mutInd].rel_mu);
 								}
 							}
 							}
@@ -598,6 +599,7 @@ int main() {
 						for (int i01=0;i01<nmutator;++i01){
 							if(del.mut==mutator[i01]){
 								(pop[del.mutInd].rel_mu)/=mut_e[i01];
+								pop[del.mutInd].rel_mu=max(0.0001,pop[del.mutInd].rel_mu);
 							}
 						}
 					}
@@ -626,6 +628,7 @@ int main() {
 					for (int i01=0;i01<nmutator;++i01){
 						if(ben.mut==mutator[i01]){
 							pop[ben.mutInd].rel_mu*=mut_e[i01];
+							pop[ben.mutInd].rel_mu=max(0.0001,pop[ben.mutInd].rel_mu);
 						}
 					}
 				}
