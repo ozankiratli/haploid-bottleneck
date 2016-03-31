@@ -400,6 +400,12 @@ int main() {
 			s_ben[mutator[i00]]=0;
 		}
 	}
+	else{
+		for (int i00=0;i00<nmutator;++i00){
+			mutator[i00]=dist6(gen);
+			mut_e[i00]=1;
+		}
+	}
 
 	array<array<int,t_growth>,t_bot> result_nOff;
 	array<array<double,t_growth>,t_bot> result_wMean;
