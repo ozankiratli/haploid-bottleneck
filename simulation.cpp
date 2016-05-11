@@ -1,7 +1,7 @@
 //============================================================================
 // Name        : simulation.cpp
 // Author      : ozan kiratli - ozankiratli@gmail.com
-// Version     : 0.1
+// Version     : 1.0
 // Copyright   : Your copyright notice
 // Description : Individual based haploid population simulation with bottlenecking feature
 //============================================================================
@@ -21,13 +21,14 @@
 #include "variables.h"
 using namespace std;
 
-
+// anti mutator 10^-6 mutator 10^-4
+// effective pop size
 struct individual
 {
 	long int ID;
 	vector<long int> neuLocus;
 	vector<long int> delLocus;
-	vector<long int> benLocus;
+    vector<long int> benLocus;
 	double rel_mu;
 	double w;
 	int nOff;
@@ -339,9 +340,10 @@ void generate_results(vector<individual> popFinal,
 }
 
 int main() {
-	auto begin = chrono::high_resolution_clock::now();
+    auto begin = chrono::high_resolution_clock::now();
 	string fileheader;
-	if (mutator_control){
+
+    if (mutator_control){
 		fileheader="mutator";
 	}
 	if (!mutator_control){
@@ -364,17 +366,17 @@ int main() {
 	random_device rd;
 	//mt19937 gen (rd());
 	minstd_rand0 gen (rd());
-    	normal_distribution<double> rand_Neumu(mu_neu,0.1*mu_neu);
-    	normal_distribution<double> rand_Delmu(mu_del,0.1*mu_del);
-    	normal_distribution<double> rand_Benmu(mu_ben,0.1*mu_ben);
-    	gamma_distribution<double> rand_deleffects(shaped,scaled);
-    	exponential_distribution<double> rand_beneffects(lambdab);
-    	uniform_int_distribution<long int> rand_ngenes(0,ngenes-1);
-    	normal_distribution<double> rand_mutatoreffect(mean_e_mutator,var_e_mutator);
-    	uniform_int_distribution<int> rand_nMutator(0,nmutator-1);
-    	uniform_int_distribution<long int> rand_genome(0,l-1);
-    	uniform_int_distribution<int> rand_success_bool(0,1000);
-	normal_distribution<double> rand_offvar(0,w_sel);
+    normal_distribution<double> rand_Neumu(mu_neu,0.1*mu_neu);
+    normal_distribution<double> rand_Delmu(mu_del,0.1*mu_del);
+    normal_distribution<double> rand_Benmu(mu_ben,0.1*mu_ben);
+    gamma_distribution<double> rand_deleffects(shaped,scaled);
+    exponential_distribution<double> rand_beneffects(lambdab);
+    uniform_int_distribution<long int> rand_ngenes(0,ngenes-1);
+    normal_distribution<double> rand_mutatoreffect(mean_e_mutator,var_e_mutator);
+    uniform_int_distribution<int> rand_nMutator(0,nmutator-1);
+    uniform_int_distribution<long int> rand_genome(0,l-1);
+    uniform_int_distribution<int> rand_success_bool(0,1000);
+    normal_distribution<double> rand_offvar(0,w_sel);
 
 	array<array<bool,1001>,1001> success;
 	for (int i00=0;i00<500;++i00){
@@ -389,15 +391,15 @@ int main() {
 	}
 	for (int i00=0;i00<500;++i00){
 		for (int i01=0;i01<i00;++i01){
-            		int place=rand_success_bool(gen);
-            		while (success[i00][place]==1) place=rand_success_bool(gen);
+            int place=rand_success_bool(gen);
+            while (success[i00][place]==1) place=rand_success_bool(gen);
 			success[i00][place]=1;
 		}
 	}
 	for (int i00=500;i00<1001;++i00){
 		for (int i01=0;i01<1001-i00;++i01){
-            		int place=rand_success_bool(gen);
-            		while (success[i00][place]==0) place=rand_success_bool(gen);
+            int place=rand_success_bool(gen);
+            while (success[i00][place]==0) place=rand_success_bool(gen);
 			success[i00][place]=0;
 		}
 	}
@@ -406,32 +408,32 @@ int main() {
 	array<array<double,t_growth>,t_bot> muBen;
 	for (int i00=0; i00<t_bot ; ++i00){
 		for (int i01=0; i01<t_growth; ++i01 ){
-            		muNeu[i00][i01]=rand_Neumu(gen);
-            		muDel[i00][i01]=rand_Delmu(gen);
-            		muBen[i00][i01]=rand_Benmu(gen);
+            muNeu[i00][i01]=rand_Neumu(gen);
+            muDel[i00][i01]=rand_Delmu(gen);
+            muBen[i00][i01]=rand_Benmu(gen);
 		}
 	}
 
 	array<double,ngenes> s_del;
 	array<double,ngenes> s_ben;
 	for (int i00=0;i00<ngenes;++i00){
-        	s_del[i00]=rand_deleffects(gen);
-        	s_ben[i00]=rand_beneffects(gen);
+        s_del[i00]=rand_deleffects(gen);
+        s_ben[i00]=rand_beneffects(gen);
 	}
 
 	array<int,nmutator> mutator;
 	array<double,nmutator> mut_e;
 	if (mutator_control){
 		for (int i00=0;i00<nmutator;++i00){
-        		mutator[i00]=rand_ngenes(gen);
-            		mut_e[i00]=rand_mutatoreffect(gen);
+            mutator[i00]=rand_ngenes(gen);
+            mut_e[i00]=rand_mutatoreffect(gen);
 			s_del[mutator[i00]]=0;
 			s_ben[mutator[i00]]=0;
 		}
 	}
 	else{
 		for (int i00=0;i00<nmutator;++i00){
-            		mutator[i00]=rand_ngenes(gen);
+            mutator[i00]=rand_ngenes(gen);
 			mut_e[i00]=1;
 		}
 	}
@@ -444,10 +446,10 @@ int main() {
 	vector<long int> neuLoci;
 	vector<long int> delLoci;
 	vector<long int> benLoci;
-    	auto delLocibegin=delLoci.begin();
-    	auto delLociend=delLoci.end();
-    	auto benLocibegin=benLoci.begin();
-    	auto benLociend=benLoci.end();
+    auto delLocibegin=delLoci.begin();
+    auto delLociend=delLoci.end();
+    auto benLocibegin=benLoci.begin();
+    auto benLociend=benLoci.end();
 
 	individual initialind={0,{},{},{},1,1,2};
 
@@ -467,28 +469,30 @@ int main() {
 			for (long int i00=0;i00<n;++i00){
 				pop.push_back(initialind);
 			}
+
 			pop[0].rel_mu=mu_next;
 			pop[0].w=w_next;
-            		double rndnum=rand_offvar(gen);
-        		pop[0].nOff=wtooffn(pop[0].w,rndnum);
-           		sumOff=0;
+            double rndnum=rand_offvar(gen);
+            pop[0].nOff=wtooffn(pop[0].w,rndnum);
+
+			sumOff=0;
 			for (int i00=0;i00<n;++i00){
 				sumOff=pop[i00].nOff;
 			}
-            		if (sumOff<=0){
-                		generate_results(popFinal,result_nOff, result_wMean,
-                			result_muScaled, mutator,s_del, s_ben,mut_e,
-                        		fileheader,tbot);
-                		auto end = chrono::high_resolution_clock::now();
-                		auto es = end - begin;
-                		cout << "Extinction at bottleneck" << endl;
-                		cout << "t_bot= " << i1 << endl;
-                		cout << "time= " << chrono::duration_cast<chrono::seconds>(es).count() << " seconds" << endl;
-                		exit(0);
-            		}
+            if (sumOff<=0){
+                generate_results(popFinal,result_nOff, result_wMean,
+                        result_muScaled, mutator,s_del, s_ben,mut_e,
+                        fileheader,tbot);
+                auto end = chrono::high_resolution_clock::now();
+                auto es = end - begin;
+                cout << "Extinction at bottleneck" << endl;
+                cout << "t_bot= " << i1 << endl;
+                cout << "time= " << chrono::duration_cast<chrono::seconds>(es).count() << " seconds" << endl;
+                exit(0);
+            }
 
 			for (int i2=0;i2<t_growth;++i2){
-                		auto lap = chrono::high_resolution_clock::now();
+                auto lap = chrono::high_resolution_clock::now();
 				for (long int i00=0;i00<n;++i00){
 					if (pop[i00].nOff>0){
 						for (int i01=0;i01<pop[i00].nOff-1;++i01){
@@ -504,14 +508,13 @@ int main() {
 					pop[i00].ID=i00;
 				}
 				{
-                    			poisson_distribution<long int> rand_nNeu(n*l*muNeu[i1][i2]);
-                    			poisson_distribution<long int> rand_nDel(n*l*muDel[i1][i2]);
-                    			poisson_distribution<long int> rand_nBen(n*l*muBen[i1][i2]);
-                    			uniform_int_distribution<long int> rand_npop(0,n-1);
-                    			long int nNeu=rand_nNeu(gen);
-                    			long int nDel=rand_nDel(gen);
-                    			long int nBen=rand_nBen(gen);
-                    			// Neutral Mutations
+                    poisson_distribution<long int> rand_nNeu(n*l*muNeu[i1][i2]);
+                    poisson_distribution<long int> rand_nDel(n*l*muDel[i1][i2]);
+                    poisson_distribution<long int> rand_nBen(n*l*muBen[i1][i2]);
+                    uniform_int_distribution<long int> rand_npop(0,n-1);
+                    long int nNeu=rand_nNeu(gen);
+                    long int nDel=rand_nDel(gen);
+                    long int nBen=rand_nBen(gen);
 					{
 						{
 							while (nNeu>100000){
@@ -519,16 +522,16 @@ int main() {
 									int rmu;
 									mutlist neu;
 									for (long int i00=0;i00<100000;++i00){
-                                        					neu.mutInd=rand_npop(gen);
-                                        					neu.mut=rand_ngenes(gen);
+                                        neu.mutInd=rand_npop(gen);
+                                        neu.mut=rand_ngenes(gen);
 										rmu=1000*pop[neu.mutInd].rel_mu;
 										rmu=max(0,rmu);
 										while (rmu>1000){
 											pop[neu.mutInd].neuLocus.push_back(neu.mut);
-                                            						neu.mut=rand_ngenes(gen);
+                                            neu.mut=rand_ngenes(gen);
 											rmu-=1000;
 										}
-                                        					neu.success=success[rmu][rand_success_bool(gen)];
+                                        neu.success=success[rmu][rand_success_bool(gen)];
 										if (neu.success){
 											pop[neu.mutInd].neuLocus.push_back(neu.mut);
 										}
@@ -541,194 +544,196 @@ int main() {
 							mutlist neu;
 							int rmu;
 							for (long int i00=0;i00<nNeu;++i00){
-                                				neu.mutInd=rand_npop(gen);
-                                				neu.mut=rand_genome(gen);
+                                neu.mutInd=rand_npop(gen);
+                                neu.mut=rand_genome(gen);
 								rmu=1000*pop[neu.mutInd].rel_mu;
 								rmu=max(0,rmu);
 								while (rmu>1000){
 									pop[neu.mutInd].neuLocus.push_back(neu.mut);
-        			                   			neu.mut=rand_ngenes(gen);
+                                    neu.mut=rand_ngenes(gen);
 									rmu-=1000;
 								}
-                                				neu.success=success[rmu][rand_success_bool(gen)];
+                                neu.success=success[rmu][rand_success_bool(gen)];
 								if (neu.success){
 									pop[neu.mutInd].neuLocus.push_back(neu.mut);
 								}
 							}
 						}
 					}
-					//Deleterious Mutations
+
 					{
 						{
 
-                            				while (nDel>100000){
-                                				{
-                                    					mutlist mutt;
-                                    					int rmu;
-                                    					for (long int i00=0;i00<100000;++i00){
-                                        					mutt.mutInd=rand_npop(gen);
-                                        					mutt.mut=rand_ngenes(gen);
-                                        					rmu=1000*pop[mutt.mutInd].rel_mu;
-                                        					rmu=max(0,rmu);
-                                        					while (rmu>1000){
-                                            						if (find(delLocibegin,delLociend,mutt.mut)==delLociend){
-                                                						pop[mutt.mutInd].delLocus.push_back(mutt.mut);
-                                                						pop[mutt.mutInd].w*=(1-s_del[mutt.mut]);
-                                                						double rndnum=rand_offvar(gen);
-                                                						pop[mutt.mutInd].nOff=wtooffn(pop[mutt.mutInd].w,rndnum);
-                                                						auto found=find(mutatorbegin,mutatorend,mutt.mut);
-                                                						if(found!=mutatorend){
-                                                    							int pos=distance(mutatorbegin,found);
-                                                    							pop[mutt.mutInd].rel_mu/=mut_e[pos];
-                                                    							pop[mutt.mutInd].rel_mu=max(0.0001,pop[mutt.mutInd].rel_mu);
-                                                						}
-                                            						}
-                                            						mutt.mut=rand_ngenes(gen);
-                                            						rmu-=1000;
-                                        					}
-                                        					mutt.success=success[rmu][rand_success_bool(gen)];
-                                        					if (mutt.success && (find(delLocibegin,delLociend,mutt.mut)==delLociend)){
-                                            						pop[mutt.mutInd].delLocus.push_back(mutt.mut);
-                                            						pop[mutt.mutInd].w*=(1-s_del[mutt.mut]);
-                                        						double rndnum=rand_offvar(gen);
-                                            						pop[mutt.mutInd].nOff=wtooffn(pop[mutt.mutInd].w,rndnum);
-                                            						auto found=find(mutatorbegin,mutatorend,mutt.mut);
-                                            						if(found!=mutatorend){
-                                                						int pos=distance(mutatorbegin,found);
-                                                						pop[mutt.mutInd].rel_mu/=mut_e[pos];
-                                        			   				pop[mutt.mutInd].rel_mu=max(0.0001,pop[mutt.mutInd].rel_mu);
-                                            						}
-                                        					}
-                                    					}
-                                				}
-                                				nDel-=100000;
-                            				}
+                            while (nDel>100000){
+                                {
+                                    mutlist mutt;
+                                    int rmu;
+                                    for (long int i00=0;i00<100000;++i00){
+                                        mutt.mutInd=rand_npop(gen);
+                                        mutt.mut=rand_ngenes(gen);
+                                        rmu=1000*pop[mutt.mutInd].rel_mu;
+                                        rmu=max(0,rmu);
+                                        while (rmu>1000){
+                                            if (find(delLocibegin,delLociend,mutt.mut)==delLociend){
+                                                pop[mutt.mutInd].delLocus.push_back(mutt.mut);
+                                                pop[mutt.mutInd].w*=(1-s_del[mutt.mut]);
+                                                double rndnum=rand_offvar(gen);
+                                                pop[mutt.mutInd].nOff=wtooffn(pop[mutt.mutInd].w,rndnum);
+                                                auto found=find(mutatorbegin,mutatorend,mutt.mut);
+                                                if(found!=mutatorend){
+                                                    int pos=distance(mutatorbegin,found);
+                                                    pop[mutt.mutInd].rel_mu/=mut_e[pos];
+                                                    pop[mutt.mutInd].rel_mu=max(0.0001,pop[mutt.mutInd].rel_mu);
+                                                }
+                                            }
+                                            mutt.mut=rand_ngenes(gen);
+                                            rmu-=1000;
+                                        }
+                                        mutt.success=success[rmu][rand_success_bool(gen)];
+                                        if (mutt.success && (find(delLocibegin,delLociend,mutt.mut)==delLociend)){
+                                            pop[mutt.mutInd].delLocus.push_back(mutt.mut);
+                                            pop[mutt.mutInd].w*=(1-s_del[mutt.mut]);
+                                            double rndnum=rand_offvar(gen);
+                                            pop[mutt.mutInd].nOff=wtooffn(pop[mutt.mutInd].w,rndnum);
+                                            auto found=find(mutatorbegin,mutatorend,mutt.mut);
+                                            if(found!=mutatorend){
+                                                int pos=distance(mutatorbegin,found);
+                                                pop[mutt.mutInd].rel_mu/=mut_e[pos];
+                                                pop[mutt.mutInd].rel_mu=max(0.0001,pop[mutt.mutInd].rel_mu);
+                                            }
+                                        }
+                                    }
+                                }
+                                nDel-=100000;
+                            }
 						}
 						{
-                            				mutlist mutt;
-                            				int rmu;
-                            				for (long int i00=0;i00<nDel;++i00){
-                                				mutt.mutInd=rand_npop(gen);
-                                				mutt.mut=rand_ngenes(gen);
-                                				rmu=1000*pop[mutt.mutInd].rel_mu;
-                                				rmu=max(0,rmu);
-                                				while (rmu>1000){
-                                    					if (find(delLocibegin,delLociend,mutt.mut)==delLociend){
-                                        				pop[mutt.mutInd].delLocus.push_back(mutt.mut);
-                                        				pop[mutt.mutInd].w*=(1-s_del[mutt.mut]);
-                                        				double rndnum=rand_offvar(gen);
-                                        				pop[mutt.mutInd].nOff=wtooffn(pop[mutt.mutInd].w,rndnum);
-                                        				auto found=find(mutatorbegin,mutatorend,mutt.mut);
-                                        				if(found!=mutatorend){
-                                            					int pos=distance(mutatorbegin,found);
-                                            					pop[mutt.mutInd].rel_mu/=mut_e[pos];
-                                            					pop[mutt.mutInd].rel_mu=max(0.0001,pop[mutt.mutInd].rel_mu);
-                                        				}
-                                    				}
-                                    					mutt.mut=rand_ngenes(gen);
-                                    					rmu-=1000;
-                                				}
-                                				mutt.success=success[rmu][rand_success_bool(gen)];
-                                				if (mutt.success && (find(delLocibegin,delLociend,mutt.mut)==delLociend)){
-                                    					pop[mutt.mutInd].delLocus.push_back(mutt.mut);
-                                    					pop[mutt.mutInd].w*=(1-s_del[mutt.mut]);
-                                    					double rndnum=rand_offvar(gen);
-                                    					pop[mutt.mutInd].nOff=wtooffn(pop[mutt.mutInd].w,rndnum);
-                                    					auto found=find(mutatorbegin,mutatorend,mutt.mut);
-                                    					if(found!=mutatorend){
-                                        					int pos=distance(mutatorbegin,found);
-                                        					pop[mutt.mutInd].rel_mu/=mut_e[pos];
-                                        					pop[mutt.mutInd].rel_mu=max(0.0001,pop[mutt.mutInd].rel_mu);
-                                    					}
-                                				}
-                            				}
-                        			}	
-                    			}
-					//Beneficial Mutations
+                            mutlist mutt;
+                            int rmu;
+                            for (long int i00=0;i00<nDel;++i00){
+                                mutt.mutInd=rand_npop(gen);
+                                mutt.mut=rand_ngenes(gen);
+                                rmu=1000*pop[mutt.mutInd].rel_mu;
+                                rmu=max(0,rmu);
+                                while (rmu>1000){
+                                    if (find(delLocibegin,delLociend,mutt.mut)==delLociend){
+                                        pop[mutt.mutInd].delLocus.push_back(mutt.mut);
+                                        pop[mutt.mutInd].w*=(1-s_del[mutt.mut]);
+                                        double rndnum=rand_offvar(gen);
+                                        pop[mutt.mutInd].nOff=wtooffn(pop[mutt.mutInd].w,rndnum);
+                                        auto found=find(mutatorbegin,mutatorend,mutt.mut);
+                                        if(found!=mutatorend){
+                                            int pos=distance(mutatorbegin,found);
+                                            pop[mutt.mutInd].rel_mu/=mut_e[pos];
+                                            pop[mutt.mutInd].rel_mu=max(0.0001,pop[mutt.mutInd].rel_mu);
+                                        }
+                                    }
+                                    mutt.mut=rand_ngenes(gen);
+                                    rmu-=1000;
+                                }
+                                mutt.success=success[rmu][rand_success_bool(gen)];
+                                if (mutt.success && (find(delLocibegin,delLociend,mutt.mut)==delLociend)){
+                                    pop[mutt.mutInd].delLocus.push_back(mutt.mut);
+                                    pop[mutt.mutInd].w*=(1-s_del[mutt.mut]);
+                                    double rndnum=rand_offvar(gen);
+                                    pop[mutt.mutInd].nOff=wtooffn(pop[mutt.mutInd].w,rndnum);
+                                    auto found=find(mutatorbegin,mutatorend,mutt.mut);
+                                    if(found!=mutatorend){
+                                        int pos=distance(mutatorbegin,found);
+                                        pop[mutt.mutInd].rel_mu/=mut_e[pos];
+                                        pop[mutt.mutInd].rel_mu=max(0.0001,pop[mutt.mutInd].rel_mu);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
 					{
-						{
-                        				while (nBen>100000){
-                            					{
-                                					mutlist mutt;
-                                					int rmu;
-                                					for (long int i00=0;i00<100000;++i00){
-                                    						mutt.mutInd=rand_npop(gen);
-                                    						mutt.mut=rand_ngenes(gen);
-                                    						rmu=1000*pop[mutt.mutInd].rel_mu;
-                                    						while (rmu>1000){
-                                        						if (find(benLocibegin,benLociend,mutt.mut)==benLociend){
-                                        							pop[mutt.mutInd].benLocus.push_back(mutt.mut);
-                                            							pop[mutt.mutInd].w*=(1+s_ben[mutt.mut]);
-                                            							double rndnum=rand_offvar(gen);
-                                            							pop[mutt.mutInd].nOff=wtooffn(pop[mutt.mutInd].w,rndnum);
-                                            							auto found=find(mutatorbegin,mutatorend,mutt.mut);
-                                            							if(found!=mutatorend){
-                                                							int pos=distance(mutatorbegin,found);
-                                                							pop[mutt.mutInd].rel_mu*=mut_e[pos];
-                                                							pop[mutt.mutInd].rel_mu=max(0.0001,pop[mutt.mutInd].rel_mu);
-                                            							}
-                                        						}
-                                        						mutt.mut=rand_ngenes(gen);
-                                        						rmu-=1000;
-                                    						}
-                                    						mutt.success=success[rmu][rand_success_bool(gen)];
-                                    						if (mutt.success && (find(benLocibegin,benLociend,mutt.mut)==benLociend)){
-                                        						pop[mutt.mutInd].benLocus.push_back(mutt.mut);
-                                        						pop[mutt.mutInd].w*=(1+s_ben[mutt.mut]);
-                                        						double rndnum=rand_offvar(gen);
-                                        						pop[mutt.mutInd].nOff=wtooffn(pop[mutt.mutInd].w,rndnum);
-                                        						auto found=find(mutatorbegin,mutatorend,mutt.mut);
-                                        						if(found!=mutatorend){
-                                            							int pos=distance(mutatorbegin,found);
-                                            							pop[mutt.mutInd].rel_mu*=mut_e[pos];
-                                            							pop[mutt.mutInd].rel_mu=max(0.0001,pop[mutt.mutInd].rel_mu);
-                                        						}	
-                                    						}
-                                					}
-                        					}
-                        					nBen-=100000;
-                					}
-        					}
-                    				{
-                        				mutlist mutt;
-                        				int rmu;
-                        				for (long int i00=0;i00<nBen;++i00){
-                            					mutt.mutInd=rand_npop(gen);
-                        	 				mutt.mut=rand_ngenes(gen);
-                            					rmu=1000*pop[mutt.mutInd].rel_mu;
-                            					while (rmu>1000){
-                                					if (find(benLocibegin,benLociend,mutt.mut)==benLociend){
-                                    						pop[mutt.mutInd].benLocus.push_back(mutt.mut);
-                                    						pop[mutt.mutInd].w*=(1+s_ben[mutt.mut]);
-                                    						double rndnum=rand_offvar(gen);
-                                    						pop[mutt.mutInd].nOff=wtooffn(pop[mutt.mutInd].w,rndnum);
-                                    						auto found=find(mutatorbegin,mutatorend,mutt.mut);
-                                    						if(found!=mutatorend){
-                                        						int pos=distance(mutatorbegin,found);
-                                        						pop[mutt.mutInd].rel_mu*=mut_e[pos];
-                                        						pop[mutt.mutInd].rel_mu=max(0.0001,pop[mutt.mutInd].rel_mu);
-                                    						}
-                                					}
-                                					mutt.mut=rand_ngenes(gen);
-                                					rmu-=1000;
-                            					}
-                            					mutt.success=success[rmu][rand_success_bool(gen)];
-                            					if (mutt.success && (find(benLocibegin,benLociend,mutt.mut)==benLociend)){
-                                					pop[mutt.mutInd].benLocus.push_back(mutt.mut);
-                                					pop[mutt.mutInd].w*=(1+s_ben[mutt.mut]);
-                                					double rndnum=rand_offvar(gen);
-                                					pop[mutt.mutInd].nOff=wtooffn(pop[mutt.mutInd].w,rndnum);
-                                					auto found=find(mutatorbegin,mutatorend,mutt.mut);
-                                					if(found!=mutatorend){
-                                    						int pos=distance(mutatorbegin,found);
-                                    						pop[mutt.mutInd].rel_mu*=mut_e[pos];
-                                    						pop[mutt.mutInd].rel_mu=max(0.0001,pop[mutt.mutInd].rel_mu);
-                                					}
-                            					}
-                        				}
-                    				}
-					}
-                		}
+                        {
+                            while (nBen>100000){
+                                {
+                                    mutlist mutt;
+                                    int rmu;
+                                    for (long int i00=0;i00<100000;++i00){
+                                        mutt.mutInd=rand_npop(gen);
+                                        mutt.mut=rand_ngenes(gen);
+                                        rmu=1000*pop[mutt.mutInd].rel_mu;
+                                        rmu=max(0,rmu);
+                                        while (rmu>1000){
+                                            if (find(benLocibegin,benLociend,mutt.mut)==benLociend){
+                                                pop[mutt.mutInd].benLocus.push_back(mutt.mut);
+                                                pop[mutt.mutInd].w*=(1+s_ben[mutt.mut]);
+                                                double rndnum=rand_offvar(gen);
+                                                pop[mutt.mutInd].nOff=wtooffn(pop[mutt.mutInd].w,rndnum);
+                                                auto found=find(mutatorbegin,mutatorend,mutt.mut);
+                                                if(found!=mutatorend){
+                                                    int pos=distance(mutatorbegin,found);
+                                                    pop[mutt.mutInd].rel_mu*=mut_e[pos];
+                                                    pop[mutt.mutInd].rel_mu=max(0.0001,pop[mutt.mutInd].rel_mu);
+                                                }
+                                            }
+                                            mutt.mut=rand_ngenes(gen);
+                                            rmu-=1000;
+                                        }
+                                        mutt.success=success[rmu][rand_success_bool(gen)];
+                                        if (mutt.success && (find(benLocibegin,benLociend,mutt.mut)==benLociend)){
+                                            pop[mutt.mutInd].benLocus.push_back(mutt.mut);
+                                            pop[mutt.mutInd].w*=(1+s_ben[mutt.mut]);
+                                            double rndnum=rand_offvar(gen);
+                                            pop[mutt.mutInd].nOff=wtooffn(pop[mutt.mutInd].w,rndnum);
+                                            auto found=find(mutatorbegin,mutatorend,mutt.mut);
+                                            if(found!=mutatorend){
+                                                int pos=distance(mutatorbegin,found);
+                                                pop[mutt.mutInd].rel_mu*=mut_e[pos];
+                                                pop[mutt.mutInd].rel_mu=max(0.0001,pop[mutt.mutInd].rel_mu);
+                                            }
+                                        }
+                                    }
+                                }
+                                nBen-=100000;
+                            }
+                        }
+                        {
+                            mutlist mutt;
+                            int rmu;
+                            for (long int i00=0;i00<nBen;++i00){
+                                mutt.mutInd=rand_npop(gen);
+                                mutt.mut=rand_ngenes(gen);
+                                rmu=1000*pop[mutt.mutInd].rel_mu;
+                                rmu=max(0,rmu);
+                                while (rmu>1000){
+                                    if (find(benLocibegin,benLociend,mutt.mut)==benLociend){
+                                        pop[mutt.mutInd].benLocus.push_back(mutt.mut);
+                                        pop[mutt.mutInd].w*=(1+s_ben[mutt.mut]);
+                                        double rndnum=rand_offvar(gen);
+                                        pop[mutt.mutInd].nOff=wtooffn(pop[mutt.mutInd].w,rndnum);
+                                        auto found=find(mutatorbegin,mutatorend,mutt.mut);
+                                        if(found!=mutatorend){
+                                            int pos=distance(mutatorbegin,found);
+                                            pop[mutt.mutInd].rel_mu*=mut_e[pos];
+                                            pop[mutt.mutInd].rel_mu=max(0.0001,pop[mutt.mutInd].rel_mu);
+                                        }
+                                    }
+                                    mutt.mut=rand_ngenes(gen);
+                                    rmu-=1000;
+                                }
+                                mutt.success=success[rmu][rand_success_bool(gen)];
+                                if (mutt.success && (find(benLocibegin,benLociend,mutt.mut)==benLociend)){
+                                    pop[mutt.mutInd].benLocus.push_back(mutt.mut);
+                                    pop[mutt.mutInd].w*=(1+s_ben[mutt.mut]);
+                                    double rndnum=rand_offvar(gen);
+                                    pop[mutt.mutInd].nOff=wtooffn(pop[mutt.mutInd].w,rndnum);
+                                    auto found=find(mutatorbegin,mutatorend,mutt.mut);
+                                    if(found!=mutatorend){
+                                        int pos=distance(mutatorbegin,found);
+                                        pop[mutt.mutInd].rel_mu*=mut_e[pos];
+                                        pop[mutt.mutInd].rel_mu=max(0.0001,pop[mutt.mutInd].rel_mu);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 
 				{
 					sumOff=0;
@@ -740,31 +745,31 @@ int main() {
 					result_nOff[i1][i2]=sumOff;
 					result_wMean[i1][i2]=wtmp/n;
 				}
-                		if (sumOff<=0){
-                    			tbot=i1;
-                			generate_results(popFinal,result_nOff, result_wMean,
-                            			result_muScaled, mutator,s_del, s_ben,mut_e,
-                            			fileheader,tbot);
-                    			cout << "Extinction at growth" << endl;
-                    			cout << "t_bot= " << i1+1 << endl;
-                    			cout << "t_growth= " << i2+1 << endl;
-                    			auto end = chrono::high_resolution_clock::now();
-                    			auto es = end - begin;
-                    			cout << "time= " << chrono::duration_cast<chrono::seconds>(es).count() << " seconds" << endl;
-                			exit(0);
-                		}
-                		if(n>n_growth){
-                    			auto end = chrono::high_resolution_clock::now();
-                    			auto es = end - lap;
-                    			cout << "Finished Gen " << i2+1 << " in Bot " << i1+1 << " n= " << n << " time= " << chrono::duration_cast<chrono::milliseconds>(es).count() << " milliseconds" << endl;
-                    			cout << "Population over " << n_growth << endl;
-                    			break;
-                		}
-                		{
-                    			auto end = chrono::high_resolution_clock::now();
-                    			auto es = end - lap;
-                    			cout << "Finished Gen " << i2+1 << " in Bot " << i1+1 << " n= " << n << " time= " << chrono::duration_cast<chrono::milliseconds>(es).count() << " milliseconds" << endl;
-                		}
+                if (sumOff<=0){
+                    tbot=i1;
+                    generate_results(popFinal,result_nOff, result_wMean,
+                            result_muScaled, mutator,s_del, s_ben,mut_e,
+                            fileheader,tbot);
+                    cout << "Extinction at growth" << endl;
+                    cout << "t_bot= " << i1+1 << endl;
+                    cout << "t_growth= " << i2+1 << endl;
+                    auto end = chrono::high_resolution_clock::now();
+                    auto es = end - begin;
+                    cout << "time= " << chrono::duration_cast<chrono::seconds>(es).count() << " seconds" << endl;
+                    exit(0);
+                }
+                if(n>n_growth){
+                    auto end = chrono::high_resolution_clock::now();
+                    auto es = end - lap;
+                    cout << "Finished Gen " << i2+1 << " in Bot " << i1+1 << " n= " << n << " time= " << chrono::duration_cast<chrono::milliseconds>(es).count() << " milliseconds" << endl;
+                    cout << "Population over " << n_growth << endl;
+                    break;
+                }
+                {
+                    auto end = chrono::high_resolution_clock::now();
+                    auto es = end - lap;
+                    cout << "Finished Gen " << i2+1 << " in Bot " << i1+1 << " n= " << n << " time= " << chrono::duration_cast<chrono::milliseconds>(es).count() << " milliseconds" << endl;
+                }
 			}
 
 			{
@@ -781,8 +786,8 @@ int main() {
 					sort(w_list.begin(),w_list.end(),acompare);
 					nhighest = round(n*selecthighest);
 					poolsize = max(one,nhighest);
-                    			uniform_int_distribution<long int> rand_indpool(0,poolsize-1);
-                			long int tmp = rand_indpool(gen);
+                    uniform_int_distribution<long int> rand_indpool(0,poolsize-1);
+                    long int tmp = rand_indpool(gen);
 					luckyInd = w_list[tmp].ID;
 				}
 				tmpf=pop[luckyInd];
@@ -799,26 +804,27 @@ int main() {
 					benLoci.push_back(tmpf.benLocus[i00]);
 				}
 				tmpf.benLocus=benLoci;
-                		delLocibegin=delLoci.begin();
-                		delLociend=delLoci.end();
-                		benLocibegin=benLoci.begin();
-                		benLociend=benLoci.end();
+                delLocibegin=delLoci.begin();
+                delLociend=delLoci.end();
+                benLocibegin=benLoci.begin();
+                benLociend=benLoci.end();
 				{
 					double tmprm=1.0;
-                    			for (int i00=0;i00<nmutator;++i00){
-                        			auto founddel = find(delLocibegin,delLociend,mutator[i00]);
-                        			if(founddel!=delLociend){
-                            				tmprm/=mut_e[i00];
-                            				tmprm=max(0.0001,tmprm);
-                        			}
-                        			auto foundben = find(benLocibegin,benLociend,mutator[i00]);
-                        			if(foundben!=benLociend){
-                            				tmprm*=mut_e[i00];
-                            				tmprm=max(0.0001,tmprm);
-                        			}
+                    for (int i00=0;i00<nmutator;++i00){
+                        auto founddel = find(delLocibegin,delLociend,mutator[i00]);
+                        if(founddel!=delLociend){
+                            tmprm/=mut_e[i00];
+                            tmprm=max(0.0001,tmprm);
+                        }
+                        auto foundben = find(benLocibegin,benLociend,mutator[i00]);
+                        if(foundben!=benLociend){
+                            tmprm*=mut_e[i00];
+                            tmprm=max(0.0001,tmprm);
+                        }
 					}
 					tmpf.rel_mu=tmprm;
 				}
+
 				w_next=tmpf.w;
 				mu_next=tmpf.rel_mu;
 				tbot=i1+1;
@@ -827,16 +833,16 @@ int main() {
 			}
 		}
 
-        	auto end = chrono::high_resolution_clock::now();
-        	auto es = end - lap0;
-        	cout << "finished Bot " << i1+1 << " time= " << chrono::duration_cast<chrono::seconds>(es).count() << " seconds" << endl;
-    	}
-    	generate_results(popFinal,result_nOff, result_wMean,
+        auto end = chrono::high_resolution_clock::now();
+        auto es = end - lap0;
+        cout << "finished Bot " << i1+1 << " time= " << chrono::duration_cast<chrono::seconds>(es).count() << " seconds" << endl;
+    }
+    generate_results(popFinal,result_nOff, result_wMean,
             result_muScaled, mutator,s_del, s_ben,mut_e,
             fileheader,tbot);
-    	auto end = chrono::high_resolution_clock::now();
-    	auto es = end - begin;
-	cout << "End of simulation" << " time= " << chrono::duration_cast<chrono::seconds>(es).count() << " seconds" <<endl;
+    auto end = chrono::high_resolution_clock::now();
+    auto es = end - begin;
+    cout << "End of simulation" << " time= " << chrono::duration_cast<chrono::seconds>(es).count() << " seconds" <<endl;
 
 	return 0;
 }
