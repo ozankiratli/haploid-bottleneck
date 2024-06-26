@@ -18,3 +18,6 @@ LINUX:
 - change mode of build.sh and run.sh to 755 or +x with chmod +x build.sh
 - run build.sh with intended number of replicates, (default=20)  "./build.sh 5"
 - run run.sh with intended number of threads (default=1) "./run.sh 2"
+
+
+P.S. I haven't developed this project for some time, but if you need help with it, send me an [email](mailto:ozankiratli@protonmail.com).
